@@ -3,16 +3,16 @@ export type UserDTO = {
     surname: string;
     email: string;
     phone: string;
-    birthDate: string; // Instant Java -> string ISO
+    birthDate: string;
     role: string;
+};
+
+export type ProductDTO = {
+    name: string;
+    code: string;
+    price: string;
 };
 
 export type ResponseMessage = {
     message: string;
-};
-
-export type ProductDTO = {
-    code: string;
-    name: string;
-    price: number;
 };

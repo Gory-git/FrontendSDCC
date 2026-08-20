@@ -1,4 +1,4 @@
-import { UserPage } from "../features/user/UserPage";
+import UserPage from "../features/user/UserPage";
 import { ProductOfMonthCard } from "../features/user/ProductOfMonthCard";
 import { ProductByRangeForm } from "../features/user/ProductByRangeForm";
 

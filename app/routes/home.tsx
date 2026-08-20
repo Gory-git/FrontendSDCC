@@ -1,13 +1,18 @@
-import type { Route } from "./+types/home";
-import MyApp from "../src/my_app/MyApp";
-
-export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
-  ];
-}
+import { Link } from "react-router";
 
 export default function Home() {
-  return <MyApp />;
+  return (
+      <main className="p-6 space-y-4">
+        <h1 className="text-2xl font-bold">Home</h1>
+
+        <div className="flex gap-4">
+          <Link to="/login" className="underline">
+            Login
+          </Link>
+          <Link to="/dashboard" className="underline">
+            Dashboard
+          </Link>
+        </div>
+      </main>
+  );
 }
