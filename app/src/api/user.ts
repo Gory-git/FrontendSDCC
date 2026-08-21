@@ -1,8 +1,12 @@
 import { apiFetch } from "./client";
 import type { ProductDTO, UserDTO } from "./types";
 
-export async function registerUser(): Promise<void> {
-    await apiFetch<void>("/user/register", { method: "POST" });
+export async function registerUser(dto: UserDTO): Promise<void> {
+    await apiFetch<void>("/user/register",
+        {
+            method: "POST",
+            body: JSON.stringify(dto)
+        });
 }
 
 export async function getCurrentUser(): Promise<UserDTO> {

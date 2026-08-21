@@ -4,22 +4,22 @@ import {
     signOut,
     type User,
 } from "firebase/auth";
-import { auth } from "./firebase";
+import { getFirebaseAuth } from "./firebase";
 
 export function observeAuth(callback: (user: User | null) => void) {
-    return onAuthStateChanged(auth, callback);
+    return onAuthStateChanged(getFirebaseAuth(), callback);
 }
 
 export async function loginWithEmailPassword(email: string, password: string) {
-    return signInWithEmailAndPassword(auth, email, password);
+    return signInWithEmailAndPassword(getFirebaseAuth(), email, password);
 }
 
 export async function logout() {
-    return signOut(auth);
+    return signOut(getFirebaseAuth());
 }
 
 export async function getBearerToken(): Promise<string | null> {
-    const user = auth.currentUser;
+    const user = getFirebaseAuth().currentUser;
     if (!user) return null;
     return user.getIdToken();
 }

@@ -17,15 +17,9 @@ export default function LoginForm() {
         setIsLoading(true);
 
         try {
-            await loginWithEmailPassword(email, password);
+            const credential = await loginWithEmailPassword(email, password);
 
-            try {
-                await registerUser();
-            } catch (error) {
-                if (!(error instanceof ApiError) || error.status !== 409) {
-                    throw error;
-                }
-            }
+            const token = await credential.user.getIdToken();
 
             navigate("/dashboard");
         } catch (error) {
