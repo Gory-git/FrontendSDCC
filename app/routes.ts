@@ -6,7 +6,12 @@ export default [
     route("register", "routes/register.tsx"),
     layout("src/auth/ProtectedLayout.tsx", [
         route("dashboard", "routes/dashboard.tsx"),
+        route("products", "routes/products.tsx"),
         route("receipts", "routes/receipts.tsx"),
         route("receipts/new", "routes/receipts.new.tsx"),
+        layout("src/auth/AdminOnlyLayout.tsx", [
+            route("admin/users", "routes/admin.users.tsx"),
+            route("admin/users/:email", "routes/admin.users.$email.tsx"),
+        ]),
     ]),
 ] satisfies RouteConfig;

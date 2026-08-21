@@ -1,16 +1,16 @@
-import { useEffect, useState } from "react";
 import { Navigate } from "react-router";
-import { observeAuth } from "./auth-client";
-import type { User } from "firebase/auth";
+import { useAuthUser } from "./useAuthUser";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<User | null | undefined>(undefined);
+    const user = useAuthUser();
 
-    useEffect(() => {
-        return observeAuth(setUser);
-    }, []);
-
-    if (user === undefined) return <p>Caricamento...</p>;
+    if (user === undefined) {
+        return (
+            <div className="flex min-h-screen items-center justify-center text-slate-500">
+                Caricamento...
+            </div>
+        );
+    }
     if (!user) return <Navigate to="/login" replace />;
 
     return <>{children}</>;

@@ -42,12 +42,21 @@ async function parseBody(
     response: Response
 ): Promise<{ data: unknown; isJson: boolean }> {
     const contentType = response.headers.get("content-type") ?? "";
-    const isJson = contentType.includes("application/json");
+    const looksJson = contentType.includes("application/json");
+
+    if (looksJson) {
+        try {
+            // Clone so a failed parse doesn't consume the body: Spring sometimes
+            // labels a plain-string response as application/json (when a String
+            // endpoint has no explicit `produces` and the client sends
+            // Accept: application/json) without actually JSON-encoding it.
+            return { data: await response.clone().json(), isJson: true };
+        } catch {
+            // Fall through to plain-text parsing below.
+        }
+    }
 
     try {
-        if (isJson) return { data: await response.json(), isJson: true };
-
-        // Capture plain-text error bodies (Spring whitelabel, etc.)
         const text = await response.text();
         return { data: text || null, isJson: false };
     } catch {

@@ -1,5 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
+    findUsersByEmail,
+    getAllUsers,
     getCurrentUser,
     getProductOfTheMonth,
     getProductOfTimeSpan,
@@ -16,6 +18,21 @@ export function useCurrentUser() {
     return useQuery({
         queryKey: ["current-user"],
         queryFn: getCurrentUser,
+    });
+}
+
+export function useAllUsers() {
+    return useQuery({
+        queryKey: ["users"],
+        queryFn: getAllUsers,
+    });
+}
+
+export function useUsersByEmail(email: string, threshold: number, enabled = true) {
+    return useQuery({
+        queryKey: ["users", "search", email, threshold],
+        queryFn: () => findUsersByEmail(email, threshold),
+        enabled: enabled && !!email,
     });
 }
 

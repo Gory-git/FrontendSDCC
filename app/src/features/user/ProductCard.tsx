@@ -1,4 +1,5 @@
 import type { ProductDTO } from "../../api/types";
+import { Card } from "../../components/Card";
 
 type ProductCardProps = {
     title: string;
@@ -7,12 +8,10 @@ type ProductCardProps = {
 
 export function ProductCard({ title, product }: ProductCardProps) {
     return (
-        <div className="rounded-xl border p-4 space-y-2">
-            <h2 className="text-xl font-semibold">{title}</h2>
-            <div>
-                <p><strong>Nome:</strong> {product.name}</p>
-                <p><strong>Codice:</strong> {product.code}</p>
-            </div>
-        </div>
+        <Card className="space-y-1">
+            <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+            <p className="text-slate-700"><span className="text-slate-500">Nome:</span> {product.name}</p>
+            <p className="text-slate-700"><span className="text-slate-500">Codice:</span> {product.code}</p>
+        </Card>
     );
 }

@@ -1,10 +1,13 @@
 import RegisterForm from "../src/auth/RegisterForm";
+import { PublicHeader } from "../src/components/PublicHeader";
 
 export default function RegisterPage() {
     return (
-        <main className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Registrazione</h1>
-            <RegisterForm />
-        </main>
+        <div className="flex min-h-screen flex-col">
+            <PublicHeader />
+            <div className="flex flex-1 items-center justify-center px-6 py-12">
+                <RegisterForm />
+            </div>
+        </div>
     );
 }

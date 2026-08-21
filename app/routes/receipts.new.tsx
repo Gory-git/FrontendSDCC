@@ -4,6 +4,12 @@ import { useCurrentUser } from "../src/features/user/hooks";
 import { useAllProducts } from "../src/features/products/hooks";
 import { useAddReceipt, useUploadReceiptPdf } from "../src/features/receipts/hooks";
 import type { PaymentMethod, ReceiptDTO } from "../src/api/types";
+import { PageContainer } from "../src/components/PageContainer";
+import { Card } from "../src/components/Card";
+import { Field } from "../src/components/Field";
+import { DateField } from "../src/components/DateField";
+import { Button } from "../src/components/Button";
+import { APP_MIN_DATETIME_LOCAL, nowForDatetimeLocal } from "../src/lib/dateInput";
 
 const paymentMethodOptions: { value: PaymentMethod; label: string }[] = [
     { value: "CASH", label: "Contanti" },
@@ -18,18 +24,14 @@ const currencyFormatter = new Intl.NumberFormat("it-IT", {
     currency: "EUR",
 });
 
+const inputClass =
+    "border border-slate-300 rounded-lg p-2 text-sm bg-white focus:border-brand focus:ring-2 focus:ring-indigo-200 outline-none";
+
 type LineForm = {
     productCode: string;
     quantity: string;
     price: string;
 };
-
-function nowForDatetimeLocal(): string {
-    const now = new Date();
-    now.setSeconds(0, 0);
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    return now.toISOString().slice(0, 16);
-}
 
 function ManualReceiptForm() {
     const navigate = useNavigate();
@@ -47,7 +49,9 @@ function ManualReceiptForm() {
     const isAdmin = currentUser?.role === "ROLE_ADMIN";
     const effectiveUserEmail = isAdmin ? userEmail || currentUser?.email || "" : currentUser?.email ?? "";
 
-    const amount = lines.reduce((sum, line) => {
+    // I prezzi dei prodotti sono tasse escluse: il totale della ricevuta è
+    // subtotale (somma prezzo × quantità delle righe) + tasse.
+    const subtotal = lines.reduce((sum, line) => {
         const qty = Number(line.quantity);
         const price = Number(line.price);
         return Number.isFinite(qty) && Number.isFinite(price) ? sum + qty * price : sum;
@@ -57,8 +61,9 @@ function ManualReceiptForm() {
     const hasValidLines = lines.length > 0 && lines.every(
         (l) => l.productCode && Number(l.quantity) > 0 && Number(l.price) > 0
     );
-    const isTaxValid = tax !== "" && Number.isFinite(taxValue) && taxValue > 0 && taxValue < amount;
-    const canSubmit = hasValidLines && amount > 0 && isTaxValid && !!effectiveUserEmail && !addReceipt.isPending;
+    const isTaxValid = tax !== "" && Number.isFinite(taxValue) && taxValue > 0;
+    const amount = subtotal + (isTaxValid ? taxValue : 0);
+    const canSubmit = hasValidLines && subtotal > 0 && isTaxValid && !!effectiveUserEmail && !addReceipt.isPending;
 
     function updateLine(index: number, patch: Partial<LineForm>) {
         setLines((prev) => prev.map((l, i) => (i === index ? { ...l, ...patch } : l)));
@@ -98,77 +103,64 @@ function ManualReceiptForm() {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+            <Card className="grid grid-cols-2 gap-4">
+                <Field id="code" label="Codice ricevuta" value={code} onChange={(e) => setCode(e.target.value)} required />
+
+                <DateField
+                    id="date"
+                    label="Data"
+                    type="datetime-local"
+                    value={date}
+                    min={APP_MIN_DATETIME_LOCAL}
+                    max={nowForDatetimeLocal()}
+                    onChange={(e) => setDate(e.target.value)}
+                    required
+                />
+
                 <div className="flex flex-col gap-1">
-                    <label htmlFor="code" className="text-sm font-semibold">Codice ricevuta</label>
-                    <input
-                        id="code"
-                        value={code}
-                        onChange={(e) => setCode(e.target.value)}
-                        className="border rounded p-2"
-                        required
-                    />
-                </div>
-                <div className="flex flex-col gap-1">
-                    <label htmlFor="date" className="text-sm font-semibold">Data</label>
-                    <input
-                        id="date"
-                        type="datetime-local"
-                        value={date}
-                        max={nowForDatetimeLocal()}
-                        onChange={(e) => setDate(e.target.value)}
-                        className="border rounded p-2"
-                        required
-                    />
-                </div>
-                <div className="flex flex-col gap-1">
-                    <label htmlFor="paymentMethod" className="text-sm font-semibold">Metodo di pagamento</label>
+                    <label htmlFor="paymentMethod" className="text-sm font-semibold text-slate-700">Metodo di pagamento</label>
                     <select
                         id="paymentMethod"
                         value={paymentMethod}
                         onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                        className="border rounded p-2"
+                        className={inputClass}
                     >
                         {paymentMethodOptions.map((opt) => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                     </select>
                 </div>
-                <div className="flex flex-col gap-1">
-                    <label htmlFor="tax" className="text-sm font-semibold">Tasse (€)</label>
-                    <input
+
+                <div>
+                    <Field
                         id="tax"
+                        label="Tasse (€)"
                         type="number"
                         step="0.01"
                         min="0"
                         value={tax}
                         onChange={(e) => setTax(e.target.value)}
-                        className="border rounded p-2"
                         required
+                        error={tax !== "" && !isTaxValid ? "Deve essere maggiore di zero." : undefined}
                     />
-                    {tax !== "" && !isTaxValid && (
-                        <p className="text-xs text-red-600">
-                            Le tasse devono essere maggiori di zero e inferiori all'importo totale.
-                        </p>
-                    )}
                 </div>
+
                 {isAdmin && (
-                    <div className="flex flex-col gap-1 col-span-2">
-                        <label htmlFor="userEmail" className="text-sm font-semibold">Email cliente</label>
-                        <input
+                    <div className="col-span-2">
+                        <Field
                             id="userEmail"
+                            label="Email cliente"
                             type="email"
                             value={effectiveUserEmail}
                             onChange={(e) => setUserEmail(e.target.value)}
-                            className="border rounded p-2"
                             required
                         />
                     </div>
                 )}
-            </div>
+            </Card>
 
-            <div className="space-y-3">
-                <h2 className="text-lg font-semibold">Prodotti acquistati</h2>
+            <Card className="space-y-3">
+                <h2 className="text-lg font-semibold text-slate-900">Prodotti acquistati</h2>
 
                 {productsLoading && <p className="text-sm text-slate-500">Caricamento prodotti...</p>}
                 {!productsLoading && (products?.length ?? 0) === 0 && (
@@ -184,7 +176,7 @@ function ManualReceiptForm() {
                             <select
                                 value={line.productCode}
                                 onChange={(e) => updateLine(index, { productCode: e.target.value })}
-                                className="border rounded p-2"
+                                className={inputClass}
                                 required
                             >
                                 <option value="" disabled>Seleziona un prodotto</option>
@@ -200,7 +192,7 @@ function ManualReceiptForm() {
                                 min="1"
                                 value={line.quantity}
                                 onChange={(e) => updateLine(index, { quantity: e.target.value })}
-                                className="border rounded p-2"
+                                className={inputClass}
                                 required
                             />
                         </div>
@@ -212,46 +204,48 @@ function ManualReceiptForm() {
                                 min="0"
                                 value={line.price}
                                 onChange={(e) => updateLine(index, { price: e.target.value })}
-                                className="border rounded p-2"
+                                className={inputClass}
                                 required
                             />
                         </div>
-                        <button
+                        <Button
                             type="button"
+                            variant="secondary"
                             onClick={() => removeLine(index)}
                             disabled={lines.length === 1}
-                            className="rounded border px-3 py-2 text-sm text-slate-500 hover:bg-slate-100 disabled:opacity-40"
                         >
                             Rimuovi
-                        </button>
+                        </Button>
                     </div>
                 ))}
 
-                <button
-                    type="button"
-                    onClick={addLine}
-                    className="rounded bg-slate-100 px-4 py-2 text-sm font-medium hover:bg-slate-200"
-                >
+                <Button type="button" variant="secondary" onClick={addLine}>
                     Aggiungi riga
-                </button>
-            </div>
+                </Button>
+            </Card>
 
-            <div className="flex items-center justify-between rounded-xl border p-4">
-                <span className="font-semibold">Importo totale</span>
-                <span className="text-lg font-bold">{currencyFormatter.format(amount)}</span>
-            </div>
+            <Card className="space-y-1">
+                <div className="flex items-center justify-between text-sm text-slate-500">
+                    <span>Subtotale (tasse escluse)</span>
+                    <span>{currencyFormatter.format(subtotal)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm text-slate-500">
+                    <span>Tasse</span>
+                    <span>{currencyFormatter.format(isTaxValid ? taxValue : 0)}</span>
+                </div>
+                <div className="flex items-center justify-between pt-1 border-t border-slate-200">
+                    <span className="font-semibold text-slate-700">Importo totale</span>
+                    <span className="text-lg font-bold text-slate-900">{currencyFormatter.format(amount)}</span>
+                </div>
+            </Card>
 
             {addReceipt.isError && (
                 <p className="text-sm text-red-600">Errore: {(addReceipt.error as Error).message}</p>
             )}
 
-            <button
-                type="submit"
-                disabled={!canSubmit}
-                className="rounded bg-black text-white px-4 py-2 disabled:opacity-50"
-            >
+            <Button type="submit" disabled={!canSubmit}>
                 {addReceipt.isPending ? "Salvataggio..." : "Salva ricevuta"}
-            </button>
+            </Button>
         </form>
     );
 }
@@ -270,35 +264,33 @@ function PdfUploadForm() {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
-            <p className="text-sm text-slate-500">
-                Il PDF deve essere uno scontrino generato dal sistema (ad esempio scaricato dalla
-                pagina "Ricevute"): non è possibile caricare un PDF qualsiasi.
-            </p>
-            <div className="flex flex-col gap-1">
-                <label htmlFor="pdf" className="text-sm font-semibold">File PDF</label>
-                <input
-                    id="pdf"
-                    type="file"
-                    accept="application/pdf"
-                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                    className="border rounded p-2"
-                    required
-                />
-            </div>
+        <Card>
+            <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
+                <p className="text-sm text-slate-500">
+                    Il PDF deve essere uno scontrino generato dal sistema (ad esempio scaricato dalla
+                    pagina "Ricevute"): non è possibile caricare un PDF qualsiasi.
+                </p>
+                <div className="flex flex-col gap-1">
+                    <label htmlFor="pdf" className="text-sm font-semibold text-slate-700">File PDF</label>
+                    <input
+                        id="pdf"
+                        type="file"
+                        accept="application/pdf"
+                        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                        className={inputClass}
+                        required
+                    />
+                </div>
 
-            {uploadPdf.isError && (
-                <p className="text-sm text-red-600">Errore: {(uploadPdf.error as Error).message}</p>
-            )}
+                {uploadPdf.isError && (
+                    <p className="text-sm text-red-600">Errore: {(uploadPdf.error as Error).message}</p>
+                )}
 
-            <button
-                type="submit"
-                disabled={!file || uploadPdf.isPending}
-                className="rounded bg-black text-white px-4 py-2 disabled:opacity-50"
-            >
-                {uploadPdf.isPending ? "Caricamento..." : "Carica PDF"}
-            </button>
-        </form>
+                <Button type="submit" disabled={!file || uploadPdf.isPending}>
+                    {uploadPdf.isPending ? "Caricamento..." : "Carica PDF"}
+                </Button>
+            </form>
+        </Card>
     );
 }
 
@@ -306,22 +298,22 @@ export default function NewReceiptPage() {
     const [mode, setMode] = useState<"manual" | "pdf">("manual");
 
     return (
-        <main className="p-6 max-w-2xl mx-auto space-y-6">
-            <h1 className="text-2xl font-bold">Nuova ricevuta</h1>
+        <PageContainer className="max-w-2xl">
+            <h1 className="text-2xl font-bold text-slate-900">Nuova ricevuta</h1>
 
-            <div className="flex gap-1 rounded-lg border p-1 w-fit">
+            <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
                 <button
                     onClick={() => setMode("manual")}
-                    className={`px-3 py-1.5 rounded text-sm font-medium ${
-                        mode === "manual" ? "bg-slate-900 text-white" : "text-slate-600"
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        mode === "manual" ? "bg-brand text-white" : "text-slate-600 hover:bg-slate-100"
                     }`}
                 >
                     Inserimento manuale
                 </button>
                 <button
                     onClick={() => setMode("pdf")}
-                    className={`px-3 py-1.5 rounded text-sm font-medium ${
-                        mode === "pdf" ? "bg-slate-900 text-white" : "text-slate-600"
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        mode === "pdf" ? "bg-brand text-white" : "text-slate-600 hover:bg-slate-100"
                     }`}
                 >
                     Carica PDF
@@ -329,6 +321,6 @@ export default function NewReceiptPage() {
             </div>
 
             {mode === "manual" ? <ManualReceiptForm /> : <PdfUploadForm />}
-        </main>
+        </PageContainer>
     );
 }

@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { registerWithFirebase } from "../auth/firebase";
 import { apiFetch } from "../api/client";
+import { Card } from "../components/Card";
+import { Field } from "../components/Field";
+import { Button } from "../components/Button";
 
 // ── Tipi ──────────────────────────────────────────────────────────────────────
 
@@ -99,63 +102,6 @@ function PasswordStrengthBar({ password }: { password: string }) {
     );
 }
 
-// ── Field ─────────────────────────────────────────────────────────────────────
-
-interface FieldProps {
-    id:           keyof FormData;
-    label:        string;
-    type?:        string;
-    value:        string;
-    error?:       string;
-    placeholder?: string;
-    onChange:     (e: React.ChangeEvent<HTMLInputElement>) => void;
-    rightSlot?:   React.ReactNode;
-}
-
-function Field({ id, label, type = "text", value, error, placeholder, onChange, rightSlot }: FieldProps) {
-    return (
-        <div className="flex flex-col gap-1">
-            <label htmlFor={id} className="text-sm font-semibold text-slate-700">
-                {label}
-            </label>
-            <div className="relative">
-                <input
-                    id={id}
-                    name={id}
-                    type={type}
-                    value={value}
-                    onChange={onChange}
-                    placeholder={placeholder}
-                    aria-invalid={!!error}
-                    aria-describedby={error ? `${id}-error` : undefined}
-                    className={[
-                        "w-full rounded-lg border px-3 py-2.5 text-sm bg-white",
-                        "text-slate-900 placeholder-slate-400 outline-none",
-                        "transition-all duration-150 focus:ring-2 focus:ring-offset-1",
-                        rightSlot ? "pr-10" : "",
-                        error
-                            ? "border-red-400 focus:ring-red-300"
-                            : "border-slate-300 focus:border-slate-500 focus:ring-slate-200",
-                    ].join(" ")}
-                />
-                {rightSlot && (
-                    <div className="absolute inset-y-0 right-3 flex items-center">
-                        {rightSlot}
-                    </div>
-                )}
-            </div>
-            {error && (
-                <p id={`${id}-error`} className="text-xs text-red-600 flex items-center gap-1">
-                    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd"/>
-                    </svg>
-                    {error}
-                </p>
-            )}
-        </div>
-    );
-}
-
 // ── Componente Principale ─────────────────────────────────────────────────────
 
 export default function RegisterForm() {
@@ -241,7 +187,7 @@ export default function RegisterForm() {
 
     return (
         <div className="max-w-md mx-auto">
-            <div className="rounded-2xl border border-slate-200 bg-white shadow-md px-8 py-10">
+            <Card className="px-8 py-10">
 
                 {/* Header */}
                 <div className="mb-8 text-center">
@@ -325,11 +271,7 @@ export default function RegisterForm() {
                     )}
 
                     {/* Submit button */}
-                    <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="w-full flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-150 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+                    <Button type="submit" disabled={isLoading} className="w-full">
                         {isLoading ? (
                             <>
                                 {/* Spinner SVG */}
@@ -342,10 +284,10 @@ export default function RegisterForm() {
                         ) : (
                             "Registrati"
                         )}
-                    </button>
+                    </Button>
 
                 </form>
-            </div>
+            </Card>
         </div>
     );
 }

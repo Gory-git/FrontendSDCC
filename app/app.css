@@ -3,13 +3,18 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  --color-brand: var(--color-indigo-600);
+  --color-brand-hover: var(--color-indigo-700);
+  --color-brand-light: var(--color-indigo-50);
 }
 
 html,
 body {
-  @apply bg-white dark:bg-gray-950;
-
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
-  }
+  @apply bg-slate-50 text-slate-900;
+  /* L'app non ha ancora un tema scuro per i componenti (tutto colore fisso
+     chiaro): forzare color-scheme evita che i controlli nativi del browser
+     (es. l'icona dei date-picker) si adattino al dark mode del sistema e
+     finiscano invisibili su sfondi che restano chiari. */
+  color-scheme: light;
 }
