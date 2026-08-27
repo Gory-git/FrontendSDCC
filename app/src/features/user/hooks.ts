@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+    completeRegistration,
     getAllUsers,
     getCurrentUser,
     getProductOfTheMonth,
@@ -31,6 +32,17 @@ export function useUpdateCurrentUser() {
             // la risposta evita di mostrare i vecchi dati fino al refetch.
             queryClient.setQueryData(["current-user"], user);
             queryClient.invalidateQueries({ queryKey: ["users"] });
+        },
+    });
+}
+
+export function useCompleteRegistration() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: completeRegistration,
+        onSuccess: () => {
+            // Rileggere il profilo fa cadere la guardia e sblocca l'app.
+            queryClient.invalidateQueries({ queryKey: ["current-user"] });
         },
     });
 }

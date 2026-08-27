@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from "react-router";
 import RequireAuth from "./RequireAuth";
+import RequireProfile from "./RequireProfile";
 import { logout } from "./auth-client";
 import { useCurrentUser } from "../features/user/hooks";
 import { Button } from "../components/Button";
@@ -52,10 +53,12 @@ function Nav() {
 export default function ProtectedLayout() {
     return (
         <RequireAuth>
-            <div className="min-h-screen">
-                <Nav />
-                <Outlet />
-            </div>
+            <RequireProfile>
+                <div className="min-h-screen">
+                    <Nav />
+                    <Outlet />
+                </div>
+            </RequireProfile>
         </RequireAuth>
     );
 }
