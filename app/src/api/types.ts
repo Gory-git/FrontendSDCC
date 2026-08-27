@@ -83,3 +83,25 @@ export type SummaryStatsDTO = {
     userCount: number;
     adminCount: number;
 };
+
+// ─── Chatbot ────────────────────────────────────────────────────────────────
+
+export type ChatRole = "user" | "assistant";
+
+export type ChatMessage = {
+    role: ChatRole;
+    content: string;
+};
+
+/**
+ * Il backend non conserva la conversazione: la cronologia viaggia nella
+ * richiesta e viene ricostruita a ogni domanda.
+ */
+export type ChatRequestDTO = {
+    question: string;
+    history?: ChatMessage[];
+};
+
+export type ChatResponseDTO = {
+    answer: string;
+};

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { UserDTO } from "../../api/types";
 import {
     completeRegistration,
     getAllUsers,
@@ -51,6 +52,21 @@ export function useAllUsers() {
     return useQuery({
         queryKey: ["users"],
         queryFn: getAllUsers,
+    });
+}
+
+/**
+ * Dettaglio di un utente a partire dall'email. Non esiste un endpoint dedicato
+ * (`UserController` espone solo /page, /list e /find), quindi si riusa la lista
+ * admin: usando la **stessa** queryKey ["users"] il dato è già in cache quando
+ * si arriva dalla pagina utenti, e `select` filtra senza duplicare nulla.
+ */
+export function useUserByEmail(email: string) {
+    return useQuery({
+        queryKey: ["users"],
+        queryFn: getAllUsers,
+        select: (users: UserDTO[]) => users.find((user) => user.email === email),
+        enabled: !!email,
     });
 }
 

@@ -9,6 +9,7 @@ export default [
         route("products", "routes/products.tsx"),
         route("receipts", "routes/receipts.tsx"),
         route("receipts/new", "routes/receipts.new.tsx"),
+        route("chat", "routes/chat.tsx"),
         layout("src/auth/AdminOnlyLayout.tsx", [
             route("admin/stats", "routes/admin.stats.tsx"),
             route("admin/users", "routes/admin.users.tsx"),

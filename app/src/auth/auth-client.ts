@@ -6,6 +6,7 @@ import {
 } from "firebase/auth";
 import { getFirebaseAuth } from "./firebase";
 import { queryClient } from "../api/queryClient";
+import { clearConversation } from "../features/chat/conversation";
 
 export function observeAuth(callback: (user: User | null) => void) {
     return onAuthStateChanged(getFirebaseAuth(), callback);
@@ -21,6 +22,9 @@ export async function logout() {
     // questo, chi entra dopo vede i dati in cache dell'utente precedente finché
     // il refetch non risponde (e se il refetch fallisce, li vede per sempre).
     queryClient.clear();
+    // Stesso motivo: il transcript di RiceVito contiene importi e codici di chi
+    // ha appena chiuso la sessione.
+    clearConversation();
 }
 
 export async function getBearerToken(): Promise<string | null> {

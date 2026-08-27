@@ -3,6 +3,7 @@ import { Navigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthUser } from "./useAuthUser";
 import { Loading } from "../components/Loading";
+import { clearConversation } from "../features/chat/conversation";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
     const user = useAuthUser();
@@ -15,8 +16,10 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     useEffect(() => {
         if (user === undefined) return;
         const uid = user?.uid ?? null;
-        if (lastUid.current !== undefined && lastUid.current !== uid)
+        if (lastUid.current !== undefined && lastUid.current !== uid) {
             queryClient.clear();
+            clearConversation();
+        }
         lastUid.current = uid;
     }, [user, queryClient]);
 

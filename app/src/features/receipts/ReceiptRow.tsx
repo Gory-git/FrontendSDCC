@@ -1,14 +1,21 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import type { ReceiptDTO } from "../../api/types";
 import { useDeleteReceipt, useReceiptPdfUrl } from "./hooks";
+import { useCurrentUser } from "../user/hooks";
 import { Card } from "../../components/Card";
 import { errorMessage } from "../../lib/errorMessage";
 import { Button } from "../../components/Button";
+import { ReceiptSpinner } from "../../components/Loading";
 import { currencyFormatter, formatDate, paymentMethodLabels } from "./formatters";
 
 export function ReceiptRow({ receipt }: { receipt: ReceiptDTO }) {
     const [expanded, setExpanded] = useState(false);
     const pdfUrl = useReceiptPdfUrl();
+    // La query è la stessa che usa la navbar: TanStack la serve dalla cache,
+    // quindi averla in ogni riga non moltiplica le richieste.
+    const { data: currentUser } = useCurrentUser();
+    const isAdmin = currentUser?.role === "ROLE_ADMIN";
     const deleteReceipt = useDeleteReceipt();
 
     function handleDownload() {
@@ -43,6 +50,19 @@ export function ReceiptRow({ receipt }: { receipt: ReceiptDTO }) {
 
             {expanded && (
                 <div className="border-t border-line p-4 space-y-3 bg-muted">
+                    {/* Solo per l'admin: nella pagina delle proprie ricevute vedere
+                        la propria email a ogni riga sarebbe rumore. */}
+                    {isAdmin && (
+                        <p className="text-sm text-fg-muted">
+                            Intestatario:{" "}
+                            <Link
+                                to={`/admin/users/${encodeURIComponent(receipt.userEmail)}`}
+                                className="font-medium text-brand-fg hover:text-brand-hover"
+                            >
+                                {receipt.userEmail}
+                            </Link>
+                        </p>
+                    )}
                     <p className="text-sm text-fg-muted">
                         Tasse: {currencyFormatter.format(Number(receipt.tax))}
                     </p>
@@ -75,14 +95,14 @@ export function ReceiptRow({ receipt }: { receipt: ReceiptDTO }) {
                             onClick={handleDownload}
                             disabled={pdfUrl.isPending}
                         >
-                            {pdfUrl.isPending ? "Generazione..." : "Scarica PDF"}
+                            {pdfUrl.isPending ? <><ReceiptSpinner size="sm" />Generazione...</> : "Scarica PDF"}
                         </Button>
                         <Button
                             variant="danger"
                             onClick={handleDelete}
                             disabled={deleteReceipt.isPending}
                         >
-                            {deleteReceipt.isPending ? "Eliminazione..." : "Elimina"}
+                            {deleteReceipt.isPending ? <><ReceiptSpinner size="sm" />Eliminazione...</> : "Elimina"}
                         </Button>
                     </div>
                     {pdfUrl.isError && (

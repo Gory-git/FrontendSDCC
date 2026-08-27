@@ -3,6 +3,7 @@ import RequireAuth from "./RequireAuth";
 import RequireProfile from "./RequireProfile";
 import { logout } from "./auth-client";
 import { useCurrentUser } from "../features/user/hooks";
+import { useChatStatus } from "../features/chat/hooks";
 import { Button } from "../components/Button";
 import { ThemeToggle } from "../components/ThemeToggle";
 
@@ -14,6 +15,9 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 function Nav() {
     const navigate = useNavigate();
     const { data: currentUser } = useCurrentUser();
+    // La voce compare solo dove il chatbot e' configurato: altrove porterebbe a
+    // una pagina che sa solo dire di non essere disponibile.
+    const { data: chatEnabled } = useChatStatus();
 
     async function handleLogout() {
         await logout();
@@ -37,6 +41,9 @@ function Nav() {
                         )}
                         <NavLink to="/products" className={navLinkClass}>Prodotti</NavLink>
                         <NavLink to="/receipts" className={navLinkClass}>Ricevute</NavLink>
+                        {chatEnabled && (
+                            <NavLink to="/chat" className={navLinkClass}>RiceVito</NavLink>
+                        )}
                     </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
