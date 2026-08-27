@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="ReceiptHub">
+  <!--
+    Stessa ricevuta dello spinner in Loading.tsx, ma piena invece che a tratto:
+    a 16 pixel una linea sottile sparisce, una sagoma piena no.
+
+    Sta su una piastrella indaco (il colore brand) e non sul trasparente perche'
+    l'icona deve reggere sia sulla barra chiara sia su quella scura del browser:
+    la piastrella si porta dietro il proprio contrasto e non dipende dal tema.
+  -->
+  <rect width="24" height="24" rx="5" fill="#4f46e5"/>
+  <g transform="translate(12 12) scale(0.74) translate(-12 -11.5)">
+    <!-- Il bordo inferiore a zig-zag e' la cosa che rende riconoscibile uno
+         scontrino: e' l'ultimo dettaglio da sacrificare rimpicciolendo. -->
+    <path d="M5 2h14v19l-2.33-1.6-2.33 1.6-2.34-1.6-2.33 1.6-2.33-1.6L5 21z" fill="#ffffff"/>
+    <!-- Le righe di testo sono ritagli nella sagoma bianca: due sole e spesse,
+         perche' tre sottili a 16 pixel diventano una macchia grigia. -->
+    <rect x="8.4" y="6.8" width="7.2" height="2.1" rx="1.05" fill="#4f46e5"/>
+    <rect x="8.4" y="11.6" width="7.2" height="2.1" rx="1.05" fill="#4f46e5"/>
+  </g>
+</svg>

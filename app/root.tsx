@@ -16,6 +16,11 @@ import { queryClient } from "./src/api/queryClient";
 import { ThemeProvider, themeInitScript } from "./src/theme/ThemeProvider";
 
 export const links: Route.LinksFunction = () => [
+  // L'icona della scheda. In SVG e non in .ico: e' nitida a ogni dimensione
+  // (16px nella scheda, 32 nei preferiti, di piu' nella schermata iniziale su
+  // mobile) e resta un file di testo versionabile invece che un binario.
+  // `public/favicon.ico` resta come ripiego per i browser che non leggono SVG.
+  { rel: "icon", type: "image/svg+xml", href: "/icon.svg" },
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",
