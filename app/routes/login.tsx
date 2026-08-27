@@ -8,9 +8,9 @@ export default function LoginPage() {
             <PublicHeader />
             <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 gap-4">
                 <LoginForm />
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-fg-muted">
                     Non hai un account?{" "}
-                    <Link to="/register" className="font-semibold text-brand hover:text-brand-hover">
+                    <Link to="/register" className="font-semibold text-brand-fg hover:text-brand-hover">
                         Registrati
                     </Link>
                 </p>

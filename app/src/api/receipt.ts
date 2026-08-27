@@ -59,3 +59,13 @@ export async function getReceiptsByCode(code: string, threshold: number): Promis
         `/receipt/find-by-code-like/${encodeURIComponent(code)}?threshold=${threshold}`
     );
 }
+
+/**
+ * Ricerca per fascia di importo. Il backend limita i risultati alle
+ * ricevute dell'utente corrente, a meno che non sia ADMIN.
+ */
+export async function getReceiptsByAmountRange(amountMin: number, amountMax: number): Promise<ReceiptDTO[]> {
+    return apiFetch<ReceiptDTO[]>(
+        `/receipt/find-by-amount?amountMin=${amountMin}&amountMax=${amountMax}`
+    );
+}

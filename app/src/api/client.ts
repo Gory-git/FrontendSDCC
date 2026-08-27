@@ -1,28 +1,14 @@
 import { getBearerToken } from "../auth/auth-client";
+import { ApiError, AuthError } from "./errors";
 
 const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 
 // ─── Error Types ────────────────────────────────────────────────────────────
 
-export class ApiError extends Error {
-    readonly status: number;
-    readonly body: unknown;
-
-    constructor(message: string, status: number, body?: unknown) {
-        super(message);
-        this.name = "ApiError";
-        this.status = status;
-        this.body = body;
-    }
-}
-
-export class AuthError extends Error {
-    constructor(message = "Failed to retrieve authentication token") {
-        super(message);
-        this.name = "AuthError";
-    }
-}
+// Definiti in ./errors per non creare un ciclo con queryClient, e ri-esportati
+// qui perché il resto dell'app li importa storicamente da questo modulo.
+export { ApiError, AuthError } from "./errors";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 

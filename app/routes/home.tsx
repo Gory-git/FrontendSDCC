@@ -1,6 +1,7 @@
 import { Navigate } from "react-router";
 import { useAuthUser } from "../src/auth/useAuthUser";
 import { PublicHeader } from "../src/components/PublicHeader";
+import { Loading } from "../src/components/Loading";
 import { LinkButton } from "../src/components/Button";
 
 export default function Home() {
@@ -8,8 +9,8 @@ export default function Home() {
 
     if (user === undefined) {
         return (
-            <div className="flex min-h-screen items-center justify-center text-slate-500">
-                Caricamento...
+            <div className="flex min-h-screen items-center justify-center">
+                <Loading label="Caricamento..." size="lg" />
             </div>
         );
     }
@@ -20,10 +21,10 @@ export default function Home() {
             <PublicHeader />
             <div className="flex flex-1 items-center justify-center px-6">
                 <div className="max-w-xl text-center space-y-6">
-                    <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
-                        Receipt<span className="text-brand">Hub</span>
+                    <h1 className="text-4xl font-extrabold tracking-tight text-fg">
+                        Receipt<span className="text-brand-fg">Hub</span>
                     </h1>
-                    <p className="text-lg text-slate-600">
+                    <p className="text-lg text-fg-muted">
                         Gestisci le tue ricevute in un unico posto: caricale a mano o in PDF,
                         ritrovale quando vuoi e tieni sotto controllo le tue spese.
                     </p>

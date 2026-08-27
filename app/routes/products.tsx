@@ -9,6 +9,8 @@ import {
     useProductSearch,
 } from "../src/features/products/hooks";
 import { PageContainer } from "../src/components/PageContainer";
+import { Loading, ReceiptSpinner } from "../src/components/Loading";
+import { errorMessage } from "../src/lib/errorMessage";
 import { Card } from "../src/components/Card";
 import { Field } from "../src/components/Field";
 import { Button } from "../src/components/Button";
@@ -33,7 +35,7 @@ function AddProductForm() {
 
     return (
         <Card className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-900">Aggiungi prodotto</h2>
+            <h2 className="text-lg font-semibold text-fg">Aggiungi prodotto</h2>
             <form onSubmit={handleSubmit} className="flex flex-wrap gap-4 items-end">
                 <div className="flex-1 min-w-[160px]">
                     <Field id="productName" label="Nome" value={name} onChange={(e) => setName(e.target.value)} required />
@@ -42,14 +44,14 @@ function AddProductForm() {
                     <Field id="productCode" label="Codice" value={code} onChange={(e) => setCode(e.target.value)} required />
                 </div>
                 <Button type="submit" disabled={addProduct.isPending}>
-                    {addProduct.isPending ? "Salvataggio..." : "Aggiungi"}
+                    {addProduct.isPending ? <><ReceiptSpinner size="sm" />Salvataggio...</> : "Aggiungi"}
                 </Button>
             </form>
             {addProduct.isError && (
-                <p className="text-sm text-red-600">Errore: {(addProduct.error as Error).message}</p>
+                <p className="text-sm text-danger">{errorMessage(addProduct.error, "Non è stato possibile aggiungere il prodotto.")}</p>
             )}
             {addProduct.isSuccess && (
-                <p className="text-sm text-green-700">Prodotto aggiunto.</p>
+                <p className="text-sm text-success">Prodotto aggiunto.</p>
             )}
         </Card>
     );
@@ -75,7 +77,7 @@ function UserProductStats() {
 
     return (
         <Card className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-900">Statistiche prodotto per utente</h2>
+            <h2 className="text-lg font-semibold text-fg">Statistiche prodotto per utente</h2>
             <Field
                 id="statsEmail"
                 label="Email utente"
@@ -88,14 +90,14 @@ function UserProductStats() {
             {email.trim() !== "" && (
                 <div className="space-y-4">
                     <div>
-                        <p className="text-sm font-semibold text-slate-700 mb-2">Ultimi 30 giorni</p>
-                        {monthQuery.isLoading && <p className="text-sm text-slate-500">Caricamento...</p>}
-                        {monthQuery.isError && <p className="text-sm text-slate-500">Nessun prodotto trovato.</p>}
+                        <p className="text-sm font-semibold text-fg-secondary mb-2">Ultimi 30 giorni</p>
+                        {monthQuery.isLoading && <Loading />}
+                        {monthQuery.isError && <p className="text-sm text-fg-muted">Nessun prodotto trovato.</p>}
                         {monthQuery.data && <ProductCard title="Prodotto del mese" product={monthQuery.data} />}
                     </div>
 
                     <div className="space-y-3">
-                        <p className="text-sm font-semibold text-slate-700">Intervallo personalizzato</p>
+                        <p className="text-sm font-semibold text-fg-secondary">Intervallo personalizzato</p>
                         <form onSubmit={handleRangeSubmit} className="flex flex-wrap gap-4 items-end">
                             <DateField
                                 id="dateMin"
@@ -116,8 +118,8 @@ function UserProductStats() {
                             <Button type="submit" variant="secondary">Cerca</Button>
                         </form>
 
-                        {rangeQuery.isLoading && <p className="text-sm text-slate-500">Caricamento...</p>}
-                        {rangeQuery.isError && <p className="text-sm text-slate-500">Nessun prodotto trovato nell'intervallo.</p>}
+                        {rangeQuery.isLoading && <Loading />}
+                        {rangeQuery.isError && <p className="text-sm text-fg-muted">Nessun prodotto trovato nell'intervallo.</p>}
                         {rangeQuery.data && <ProductCard title="Prodotto trovato" product={rangeQuery.data} />}
                     </div>
                 </div>
@@ -135,10 +137,10 @@ function ProductList({ products, isAdmin, onDelete, deletePending }: {
     return (
         <div className="grid sm:grid-cols-2 gap-3">
             {products?.map((product) => (
-                <div key={product.code} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3">
+                <div key={product.code} className="flex items-center justify-between gap-3 rounded-lg border border-line p-3">
                     <div>
-                        <p className="font-medium text-slate-900">{product.name}</p>
-                        <p className="text-sm text-slate-500">{product.code}</p>
+                        <p className="font-medium text-fg">{product.name}</p>
+                        <p className="text-sm text-fg-muted">{product.code}</p>
                     </div>
                     {isAdmin && (
                         <Button
@@ -177,7 +179,7 @@ export default function ProductsPage() {
 
     return (
         <PageContainer>
-            <h1 className="text-2xl font-bold text-slate-900">Prodotti</h1>
+            <h1 className="text-2xl font-bold text-fg">Prodotti</h1>
 
             {isAdmin && <AddProductForm />}
 
@@ -191,15 +193,15 @@ export default function ProductsPage() {
                 />
                 <ThresholdSlider id="productThreshold" value={threshold} onChange={setThreshold} />
 
-                {isLoading && <p className="text-sm text-slate-500">Caricamento prodotti...</p>}
-                {isError && <p className="text-sm text-red-600">Errore: {(error as Error).message}</p>}
+                {isLoading && <Loading label="Caricamento prodotti..." />}
+                {isError && <p className="text-sm text-danger">{errorMessage(error, "Non è stato possibile caricare i prodotti.")}</p>}
                 {!isLoading && !isError && products?.length === 0 && (
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-fg-muted">
                         {isSearching ? "Nessun prodotto corrisponde alla ricerca." : "Nessun prodotto trovato."}
                     </p>
                 )}
                 {deleteProduct.isError && (
-                    <p className="text-sm text-red-600">Errore: {(deleteProduct.error as Error).message}</p>
+                    <p className="text-sm text-danger">{errorMessage(deleteProduct.error, "Non è stato possibile eliminare il prodotto.")}</p>
                 )}
 
                 <ProductList

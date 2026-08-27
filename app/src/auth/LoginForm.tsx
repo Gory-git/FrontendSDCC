@@ -4,6 +4,7 @@ import { loginWithEmailPassword } from "../auth/auth-client";
 import { Card } from "../components/Card";
 import { Field } from "../components/Field";
 import { Button } from "../components/Button";
+import { firebaseErrorMessage } from "../lib/firebaseError";
 
 export default function LoginForm() {
     const navigate = useNavigate();
@@ -21,7 +22,7 @@ export default function LoginForm() {
             await loginWithEmailPassword(email, password);
             navigate("/dashboard");
         } catch (error) {
-            setErrorMessage(error instanceof Error ? error.message : "Login fallito");
+            setErrorMessage(firebaseErrorMessage(error, "Accesso non riuscito. Riprova."));
         } finally {
             setIsLoading(false);
         }
@@ -31,8 +32,8 @@ export default function LoginForm() {
         <div className="max-w-md mx-auto">
             <Card className="px-8 py-10">
                 <div className="mb-8 text-center">
-                    <h1 className="text-2xl font-bold text-slate-900">Bentornato</h1>
-                    <p className="mt-1 text-sm text-slate-500">Accedi al tuo account.</p>
+                    <h1 className="text-2xl font-bold text-fg">Bentornato</h1>
+                    <p className="mt-1 text-sm text-fg-muted">Accedi al tuo account.</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
@@ -56,7 +57,7 @@ export default function LoginForm() {
                     />
 
                     {errorMessage && (
-                        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-center gap-2">
+                        <div className="rounded-lg border border-danger-line bg-danger-bg px-4 py-3 text-sm text-danger flex items-center gap-2">
                             <svg className="w-4 h-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd"/>
                             </svg>

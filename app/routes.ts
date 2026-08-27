@@ -10,6 +10,7 @@ export default [
         route("receipts", "routes/receipts.tsx"),
         route("receipts/new", "routes/receipts.new.tsx"),
         layout("src/auth/AdminOnlyLayout.tsx", [
+            route("admin/stats", "routes/admin.stats.tsx"),
             route("admin/users", "routes/admin.users.tsx"),
             route("admin/users/:email", "routes/admin.users.$email.tsx"),
         ]),

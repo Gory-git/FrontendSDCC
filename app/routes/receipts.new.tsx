@@ -5,6 +5,9 @@ import { useAllProducts } from "../src/features/products/hooks";
 import { useAddReceipt, useUploadReceiptPdf } from "../src/features/receipts/hooks";
 import type { PaymentMethod, ReceiptDTO } from "../src/api/types";
 import { PageContainer } from "../src/components/PageContainer";
+import { Loading, ReceiptSpinner } from "../src/components/Loading";
+import { errorMessage } from "../src/lib/errorMessage";
+import { ApiError } from "../src/api/client";
 import { Card } from "../src/components/Card";
 import { Field } from "../src/components/Field";
 import { DateField } from "../src/components/DateField";
@@ -25,7 +28,7 @@ const currencyFormatter = new Intl.NumberFormat("it-IT", {
 });
 
 const inputClass =
-    "border border-slate-300 rounded-lg p-2 text-sm bg-white focus:border-brand focus:ring-2 focus:ring-indigo-200 outline-none";
+    "border border-line-strong rounded-lg p-2 text-sm bg-card focus:border-brand focus:ring-2 focus:ring-brand-ring outline-none";
 
 type LineForm = {
     productCode: string;
@@ -118,7 +121,7 @@ function ManualReceiptForm() {
                 />
 
                 <div className="flex flex-col gap-1">
-                    <label htmlFor="paymentMethod" className="text-sm font-semibold text-slate-700">Metodo di pagamento</label>
+                    <label htmlFor="paymentMethod" className="text-sm font-semibold text-fg-secondary">Metodo di pagamento</label>
                     <select
                         id="paymentMethod"
                         value={paymentMethod}
@@ -160,11 +163,11 @@ function ManualReceiptForm() {
             </Card>
 
             <Card className="space-y-3">
-                <h2 className="text-lg font-semibold text-slate-900">Prodotti acquistati</h2>
+                <h2 className="text-lg font-semibold text-fg">Prodotti acquistati</h2>
 
-                {productsLoading && <p className="text-sm text-slate-500">Caricamento prodotti...</p>}
+                {productsLoading && <Loading label="Caricamento prodotti..." />}
                 {!productsLoading && (products?.length ?? 0) === 0 && (
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-fg-muted">
                         Nessun prodotto disponibile. Contatta un amministratore per aggiungerne.
                     </p>
                 )}
@@ -172,7 +175,7 @@ function ManualReceiptForm() {
                 {lines.map((line, index) => (
                     <div key={index} className="flex gap-2 items-end">
                         <div className="flex flex-col gap-1 flex-1">
-                            <label className="text-xs text-slate-500">Prodotto</label>
+                            <label className="text-xs text-fg-muted">Prodotto</label>
                             <select
                                 value={line.productCode}
                                 onChange={(e) => updateLine(index, { productCode: e.target.value })}
@@ -186,7 +189,7 @@ function ManualReceiptForm() {
                             </select>
                         </div>
                         <div className="flex flex-col gap-1 w-24">
-                            <label className="text-xs text-slate-500">Quantità</label>
+                            <label className="text-xs text-fg-muted">Quantità</label>
                             <input
                                 type="number"
                                 min="1"
@@ -197,7 +200,7 @@ function ManualReceiptForm() {
                             />
                         </div>
                         <div className="flex flex-col gap-1 w-28">
-                            <label className="text-xs text-slate-500">Prezzo (€)</label>
+                            <label className="text-xs text-fg-muted">Prezzo (€)</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -225,26 +228,26 @@ function ManualReceiptForm() {
             </Card>
 
             <Card className="space-y-1">
-                <div className="flex items-center justify-between text-sm text-slate-500">
+                <div className="flex items-center justify-between text-sm text-fg-muted">
                     <span>Subtotale (tasse escluse)</span>
                     <span>{currencyFormatter.format(subtotal)}</span>
                 </div>
-                <div className="flex items-center justify-between text-sm text-slate-500">
+                <div className="flex items-center justify-between text-sm text-fg-muted">
                     <span>Tasse</span>
                     <span>{currencyFormatter.format(isTaxValid ? taxValue : 0)}</span>
                 </div>
-                <div className="flex items-center justify-between pt-1 border-t border-slate-200">
-                    <span className="font-semibold text-slate-700">Importo totale</span>
-                    <span className="text-lg font-bold text-slate-900">{currencyFormatter.format(amount)}</span>
+                <div className="flex items-center justify-between pt-1 border-t border-line">
+                    <span className="font-semibold text-fg-secondary">Importo totale</span>
+                    <span className="text-lg font-bold text-fg">{currencyFormatter.format(amount)}</span>
                 </div>
             </Card>
 
             {addReceipt.isError && (
-                <p className="text-sm text-red-600">Errore: {(addReceipt.error as Error).message}</p>
+                <p className="text-sm text-danger">{receiptConflictMessage(addReceipt.error, "Non è stato possibile salvare la ricevuta.")}</p>
             )}
 
             <Button type="submit" disabled={!canSubmit}>
-                {addReceipt.isPending ? "Salvataggio..." : "Salva ricevuta"}
+                {addReceipt.isPending ? <><ReceiptSpinner size="sm" />Salvataggio...</> : "Salva ricevuta"}
             </Button>
         </form>
     );
@@ -266,12 +269,12 @@ function PdfUploadForm() {
     return (
         <Card>
             <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-fg-muted">
                     Il PDF deve essere uno scontrino generato dal sistema (ad esempio scaricato dalla
                     pagina "Ricevute"): non è possibile caricare un PDF qualsiasi.
                 </p>
                 <div className="flex flex-col gap-1">
-                    <label htmlFor="pdf" className="text-sm font-semibold text-slate-700">File PDF</label>
+                    <label htmlFor="pdf" className="text-sm font-semibold text-fg-secondary">File PDF</label>
                     <input
                         id="pdf"
                         type="file"
@@ -283,15 +286,26 @@ function PdfUploadForm() {
                 </div>
 
                 {uploadPdf.isError && (
-                    <p className="text-sm text-red-600">Errore: {(uploadPdf.error as Error).message}</p>
+                    <p className="text-sm text-danger">{receiptConflictMessage(uploadPdf.error, "Non è stato possibile caricare il PDF.")}</p>
                 )}
 
                 <Button type="submit" disabled={!file || uploadPdf.isPending}>
-                    {uploadPdf.isPending ? "Caricamento..." : "Carica PDF"}
+                    {uploadPdf.isPending ? <><ReceiptSpinner size="sm" />Caricamento...</> : "Carica PDF"}
                 </Button>
             </form>
         </Card>
     );
+}
+
+/**
+ * Il 409 generico ("dati già associati a un altro elemento") non dice cosa sia
+ * duplicato. Qui l'unica causa possibile è il codice della ricevuta, e vale la
+ * pena dirlo: è l'informazione che serve per capire cosa fare.
+ */
+function receiptConflictMessage(error: unknown, fallback: string): string {
+    if (error instanceof ApiError && error.status === 409)
+        return "Esiste già una ricevuta con questo codice.";
+    return errorMessage(error, fallback);
 }
 
 export default function NewReceiptPage() {
@@ -299,13 +313,13 @@ export default function NewReceiptPage() {
 
     return (
         <PageContainer className="max-w-2xl">
-            <h1 className="text-2xl font-bold text-slate-900">Nuova ricevuta</h1>
+            <h1 className="text-2xl font-bold text-fg">Nuova ricevuta</h1>
 
-            <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
+            <div className="flex gap-1 rounded-lg border border-line bg-card p-1 w-fit">
                 <button
                     onClick={() => setMode("manual")}
                     className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                        mode === "manual" ? "bg-brand text-white" : "text-slate-600 hover:bg-slate-100"
+                        mode === "manual" ? "bg-brand text-white" : "text-fg-muted hover:bg-muted"
                     }`}
                 >
                     Inserimento manuale
@@ -313,7 +327,7 @@ export default function NewReceiptPage() {
                 <button
                     onClick={() => setMode("pdf")}
                     className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                        mode === "pdf" ? "bg-brand text-white" : "text-slate-600 hover:bg-slate-100"
+                        mode === "pdf" ? "bg-brand text-white" : "text-fg-muted hover:bg-muted"
                     }`}
                 >
                     Carica PDF

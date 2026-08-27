@@ -1,11 +1,12 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    findUsersByEmail,
     getAllUsers,
     getCurrentUser,
     getProductOfTheMonth,
     getProductOfTimeSpan,
     registerUser,
+    searchUsers,
+    updateCurrentUser,
 } from "../../api/user";
 
 export function useRegisterUser() {
@@ -21,6 +22,19 @@ export function useCurrentUser() {
     });
 }
 
+export function useUpdateCurrentUser() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: updateCurrentUser,
+        onSuccess: (user) => {
+            // La card del profilo e la navbar leggono la stessa query: aggiornarla con
+            // la risposta evita di mostrare i vecchi dati fino al refetch.
+            queryClient.setQueryData(["current-user"], user);
+            queryClient.invalidateQueries({ queryKey: ["users"] });
+        },
+    });
+}
+
 export function useAllUsers() {
     return useQuery({
         queryKey: ["users"],
@@ -28,11 +42,11 @@ export function useAllUsers() {
     });
 }
 
-export function useUsersByEmail(email: string, threshold: number, enabled = true) {
+export function useUserSearch(query: string, threshold: number, enabled = true) {
     return useQuery({
-        queryKey: ["users", "search", email, threshold],
-        queryFn: () => findUsersByEmail(email, threshold),
-        enabled: enabled && !!email,
+        queryKey: ["users", "search", query, threshold],
+        queryFn: () => searchUsers(query, threshold),
+        enabled: enabled && !!query,
     });
 }
 

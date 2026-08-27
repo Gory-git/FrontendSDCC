@@ -1,13 +1,14 @@
 import { Navigate, Outlet } from "react-router";
 import { useCurrentUser } from "../features/user/hooks";
+import { Loading } from "../components/Loading";
 
 export default function AdminOnlyLayout() {
     const { data: currentUser, isLoading } = useCurrentUser();
 
     if (isLoading) {
         return (
-            <div className="flex justify-center py-16 text-slate-500">
-                Caricamento...
+            <div className="flex justify-center py-16">
+                <Loading label="Caricamento..." size="lg" />
             </div>
         );
     }

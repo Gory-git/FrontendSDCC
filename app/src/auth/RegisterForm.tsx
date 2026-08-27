@@ -1,27 +1,33 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router";
 import { registerWithFirebase } from "../auth/firebase";
 import { apiFetch } from "../api/client";
 import { Card } from "../components/Card";
 import { Field } from "../components/Field";
 import { Button } from "../components/Button";
+import { validateCodiceFiscale, validatePhone, validateRequired } from "../lib/userValidation";
+import { errorMessage } from "../lib/errorMessage";
+import { firebaseErrorMessage, isFirebaseError } from "../lib/firebaseError";
 
 // ── Tipi ──────────────────────────────────────────────────────────────────────
 
 interface FormData {
-    name:      string;
-    surname:   string;
-    email:     string;
-    password:  string;
-    phone:     string;
+    name:          string;
+    surname:       string;
+    email:         string;
+    password:      string;
+    phone:         string;
+    codiceFiscale: string;
 }
 
 interface FormErrors {
-    name?:      string;
-    surname?:   string;
-    email?:     string;
-    password?:  string;
-    phone?:     string;
-    global?:    string;
+    name?:          string;
+    surname?:       string;
+    email?:         string;
+    password?:      string;
+    phone?:         string;
+    codiceFiscale?: string;
+    global?:        string;
 }
 
 // ── Validazione ───────────────────────────────────────────────────────────────
@@ -29,11 +35,8 @@ interface FormErrors {
 function validate(data: FormData): FormErrors {
     const errors: FormErrors = {};
 
-    if (!data.name.trim())
-        errors.name = "Il nome è obbligatorio.";
-
-    if (!data.surname.trim())
-        errors.surname = "Il cognome è obbligatorio.";
+    errors.name = validateRequired(data.name, "Il nome è obbligatorio.");
+    errors.surname = validateRequired(data.surname, "Il cognome è obbligatorio.");
 
     if (!data.email.trim())
         errors.email = "L'email è obbligatoria.";
@@ -47,20 +50,15 @@ function validate(data: FormData): FormErrors {
     else if (!/[A-Z]/.test(data.password) || !/[0-9]/.test(data.password))
         errors.password = "Deve contenere almeno una maiuscola e un numero.";
 
-    if (data.phone && !/^\+?[\d\s\-()]{7,15}$/.test(data.phone))
-        errors.phone = "Formato telefono non valido.";
+    errors.phone = validatePhone(data.phone);
+    errors.codiceFiscale = validateCodiceFiscale(data.codiceFiscale);
+
+    // Le chiavi con valore undefined falserebbero i controlli "quanti errori ci sono".
+    (Object.keys(errors) as (keyof FormErrors)[]).forEach((key) => {
+        if (errors[key] === undefined) delete errors[key];
+    });
 
     return errors;
-}
-
-function mapFirebaseError(code: string): string {
-    const map: Record<string, string> = {
-        "auth/email-already-in-use":   "Questa email è già registrata.",
-        "auth/invalid-email":          "Formato email non valido.",
-        "auth/weak-password":          "Password troppo debole.",
-        "auth/network-request-failed": "Errore di rete. Controlla la connessione.",
-    };
-    return map[code] ?? `Errore Firebase: ${code}`;
 }
 
 // ── Password Strength Bar ─────────────────────────────────────────────────────
@@ -92,12 +90,12 @@ function PasswordStrengthBar({ password }: { password: string }) {
                     <div
                         key={i}
                         className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-                            i < score ? color : "bg-slate-200"
+                            i < score ? color : "bg-muted"
                         }`}
                     />
                 ))}
             </div>
-            <p className="text-xs text-slate-500">{label}</p>
+            <p className="text-xs text-fg-muted">{label}</p>
         </div>
     );
 }
@@ -105,18 +103,19 @@ function PasswordStrengthBar({ password }: { password: string }) {
 // ── Componente Principale ─────────────────────────────────────────────────────
 
 export default function RegisterForm() {
+    const navigate = useNavigate();
     const [form, setForm] = useState<FormData>({
-        name:      "",
-        surname:   "",
-        email:     "",
-        password:  "",
-        phone:     "",
+        name:          "",
+        surname:       "",
+        email:         "",
+        password:      "",
+        phone:         "",
+        codiceFiscale: "",
     });
 
     const [errors,       setErrors]       = useState<FormErrors>({});
     const [isLoading,    setIsLoading]    = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [success,      setSuccess]      = useState(false);
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
         const { name, value } = e.target;
@@ -149,38 +148,26 @@ export default function RegisterForm() {
                     "Authorization": `Bearer ${idToken}`,
                 },
                 body: JSON.stringify({
-                    name:        form.name,
-                    surname:     form.surname,
-                    email:       form.email,
-                    phone:       form.phone,
-                    firebaseUid: credential.user.uid,
+                    name:          form.name,
+                    surname:       form.surname,
+                    email:         form.email,
+                    phone:         form.phone,
+                    codiceFiscale: form.codiceFiscale || undefined,
+                    firebaseUid:   credential.user.uid,
                 }),
             });
 
-            setSuccess(true);
+            navigate("/dashboard");
         } catch (err: any) {
-            if (err?.code?.startsWith("auth/")) {
-                setErrors({ global: mapFirebaseError(err.code) });
-            } else {
-                setErrors({ global: err?.message ?? "Errore durante la registrazione." });
-            }
+            const fallback = "Non è stato possibile completare la registrazione.";
+            setErrors({
+                global: isFirebaseError(err)
+                    ? firebaseErrorMessage(err, fallback)
+                    : errorMessage(err, fallback),
+            });
         } finally {
             setIsLoading(false);
         }
-    }
-
-    // ── Stato di successo ─────────────────────────────────────────────────────
-
-    if (success) {
-        return (
-            <div className="flex flex-col items-center gap-3 rounded-2xl border border-green-200 bg-green-50 px-8 py-10 text-center shadow-sm max-w-md mx-auto">
-                <svg className="w-12 h-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <h2 className="text-lg font-bold text-green-800">Registrazione completata!</h2>
-                <p className="text-sm text-green-700">Controlla la tua email per verificare l'account.</p>
-            </div>
-        );
     }
 
     // ── Form ──────────────────────────────────────────────────────────────────
@@ -191,8 +178,8 @@ export default function RegisterForm() {
 
                 {/* Header */}
                 <div className="mb-8 text-center">
-                    <h1 className="text-2xl font-bold text-slate-900">Crea un account</h1>
-                    <p className="mt-1 text-sm text-slate-500">Compila i campi per registrarti.</p>
+                    <h1 className="text-2xl font-bold text-fg">Crea un account</h1>
+                    <p className="mt-1 text-sm text-fg-muted">Compila i campi per registrarti.</p>
                 </div>
 
                 <form onSubmit={handleSubmit} noValidate className="space-y-5">
@@ -227,7 +214,7 @@ export default function RegisterForm() {
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(v => !v)}
-                                className="text-slate-400 hover:text-slate-700 transition-colors"
+                                className="text-fg-muted hover:text-fg-secondary transition-colors"
                                 aria-label={showPassword ? "Nascondi password" : "Mostra password"}
                             >
                                 {showPassword ? (
@@ -260,9 +247,22 @@ export default function RegisterForm() {
                         onChange={handleChange}
                     />
 
+                    {/* Codice fiscale */}
+                    <Field
+                        id="codiceFiscale"
+                        label="Codice fiscale (opzionale)"
+                        value={form.codiceFiscale}
+                        error={errors.codiceFiscale}
+                        placeholder="RSSMRA80A01H501U"
+                        onChange={(e) => {
+                            setForm(prev => ({ ...prev, codiceFiscale: e.target.value.toUpperCase() }));
+                            if (errors.codiceFiscale) setErrors(prev => ({ ...prev, codiceFiscale: undefined }));
+                        }}
+                    />
+
                     {/* Errore globale (Firebase / rete) */}
                     {errors.global && (
-                        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-center gap-2">
+                        <div className="rounded-lg border border-danger-line bg-danger-bg px-4 py-3 text-sm text-danger flex items-center gap-2">
                             <svg className="w-4 h-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd"/>
                             </svg>

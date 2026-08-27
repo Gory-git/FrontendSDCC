@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useProductOfTimeSpan } from "./hooks";
 import { ProductCard } from "./ProductCard";
 import { Card } from "../../components/Card";
+import { Loading } from "../../components/Loading";
+import { errorMessage, isNotFound } from "../../lib/errorMessage";
 import { Button } from "../../components/Button";
 import { DateField } from "../../components/DateField";
 import { APP_MIN_DATE, daysAgoDateString, endOfDayIsoClamped, startOfDayIso, todayDateString } from "../../lib/dateInput";
@@ -32,7 +34,7 @@ export function ProductByRangeForm() {
 
     return (
         <Card className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-900">Prodotto per intervallo</h2>
+            <h2 className="text-lg font-semibold text-fg">Prodotto per intervallo</h2>
 
             <form onSubmit={handleSubmit} className="flex flex-wrap gap-4 items-end">
                 <DateField
@@ -55,8 +57,12 @@ export function ProductByRangeForm() {
                 <Button type="submit" variant="primary">Cerca</Button>
             </form>
 
-            {isLoading && <p className="text-sm text-slate-500">Caricamento...</p>}
-            {isError && <p className="text-sm text-slate-500">Errore: {(error as Error).message}</p>}
+            {isLoading && <Loading />}
+            {isError && (isNotFound(error) ? (
+                <p className="text-sm text-fg-muted">Nessun prodotto acquistato nell'intervallo scelto.</p>
+            ) : (
+                <p className="text-sm text-danger">{errorMessage(error, "Non è stato possibile eseguire la ricerca.")}</p>
+            ))}
             {data && <ProductCard title="Prodotto trovato" product={data} />}
         </Card>
     );

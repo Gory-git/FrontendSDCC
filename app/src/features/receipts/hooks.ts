@@ -4,6 +4,7 @@ import {
     deleteReceipt,
     getAllReceipts,
     getReceiptPdfUrl,
+    getReceiptsByAmountRange,
     getReceiptsByCode,
     getReceiptsByUserEmail,
     uploadReceiptPdf,
@@ -30,6 +31,14 @@ export function useReceiptsByCode(code: string, threshold: number, enabled = tru
         queryKey: ["receipts", "by-code", code, threshold],
         queryFn: () => getReceiptsByCode(code, threshold),
         enabled: enabled && !!code,
+    });
+}
+
+export function useReceiptsByAmountRange(amountMin: number, amountMax: number, enabled = true) {
+    return useQuery({
+        queryKey: ["receipts", "by-amount", amountMin, amountMax],
+        queryFn: () => getReceiptsByAmountRange(amountMin, amountMax),
+        enabled: enabled && Number.isFinite(amountMin) && Number.isFinite(amountMax),
     });
 }
 

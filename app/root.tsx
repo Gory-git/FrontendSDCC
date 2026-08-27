@@ -1,5 +1,6 @@
 import {
   isRouteErrorResponse,
+  Link,
   Links,
   Meta,
   Outlet,
@@ -12,6 +13,7 @@ import type { Route } from "./+types/root";
 import "./app.css";
 import React from "react";
 import { queryClient } from "./src/api/queryClient";
+import { ThemeProvider, themeInitScript } from "./src/theme/ThemeProvider";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -28,10 +30,13 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    // `themeInitScript` scrive class e color-scheme su <html> prima
+    // dell'idratazione: il markup del server non può combaciare per forza.
+    <html lang="it" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <Meta />
         <Links />
       </head>
@@ -47,36 +52,35 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <ThemeProvider>
+        <Outlet />
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
-  let stack: string | undefined;
+  const isNotFoundPage = isRouteErrorResponse(error) && error.status === 404;
 
-  if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
-    details =
-      error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
-    stack = error.stack;
-  }
+  // L'errore vero finisce in console, dove serve a chi sviluppa: a schermo
+  // niente messaggi interni e nessuno stack trace.
+  if (import.meta.env.DEV) console.error(error);
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
-          <code>{stack}</code>
-        </pre>
-      )}
+    <main className="max-w-4xl mx-auto px-6 py-16 space-y-3 text-center">
+      <h1 className="text-2xl font-bold text-fg">
+        {isNotFoundPage ? "Pagina non trovata" : "Qualcosa è andato storto"}
+      </h1>
+      <p className="text-fg-muted">
+        {isNotFoundPage
+          ? "L'indirizzo che hai aperto non esiste."
+          : "Si è verificato un errore imprevisto. Riprova, o torna alla dashboard."}
+      </p>
+      <p>
+        <Link to="/dashboard" className="text-brand-fg font-semibold">
+          Torna alla dashboard
+        </Link>
+      </p>
     </main>
   );
 }

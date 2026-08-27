@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ReceiptDTO } from "../../api/types";
 import { useDeleteReceipt, useReceiptPdfUrl } from "./hooks";
 import { Card } from "../../components/Card";
+import { errorMessage } from "../../lib/errorMessage";
 import { Button } from "../../components/Button";
 import { currencyFormatter, formatDate, paymentMethodLabels } from "./formatters";
 
@@ -28,26 +29,26 @@ export function ReceiptRow({ receipt }: { receipt: ReceiptDTO }) {
         <Card className="p-0 overflow-hidden">
             <button
                 onClick={() => setExpanded((v) => !v)}
-                className="w-full flex items-center justify-between gap-4 p-4 text-left hover:bg-slate-50 transition-colors"
+                className="w-full flex items-center justify-between gap-4 p-4 text-left hover:bg-muted transition-colors"
             >
                 <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-slate-900 truncate">{receipt.code}</p>
-                    <p className="text-sm text-slate-500">{formatDate(receipt.date)}</p>
+                    <p className="font-semibold text-fg truncate">{receipt.code}</p>
+                    <p className="text-sm text-fg-muted">{formatDate(receipt.date)}</p>
                 </div>
                 <div className="text-right shrink-0">
-                    <p className="font-semibold text-slate-900">{currencyFormatter.format(Number(receipt.amount))}</p>
-                    <p className="text-sm text-brand">{paymentMethodLabels[receipt.paymentMethod]}</p>
+                    <p className="font-semibold text-fg">{currencyFormatter.format(Number(receipt.amount))}</p>
+                    <p className="text-sm text-brand-fg">{paymentMethodLabels[receipt.paymentMethod]}</p>
                 </div>
             </button>
 
             {expanded && (
-                <div className="border-t border-slate-200 p-4 space-y-3 bg-slate-50">
-                    <p className="text-sm text-slate-500">
+                <div className="border-t border-line p-4 space-y-3 bg-muted">
+                    <p className="text-sm text-fg-muted">
                         Tasse: {currencyFormatter.format(Number(receipt.tax))}
                     </p>
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="text-left text-slate-500">
+                            <tr className="text-left text-fg-muted">
                                 <th className="pb-1">Prodotto</th>
                                 <th className="pb-1">Codice</th>
                                 <th className="pb-1 text-right">Qtà</th>
@@ -57,10 +58,10 @@ export function ReceiptRow({ receipt }: { receipt: ReceiptDTO }) {
                         <tbody>
                             {receipt.lines.map((line) => (
                                 <tr key={line.productCode}>
-                                    <td className="py-1 text-slate-700">{line.productName}</td>
-                                    <td className="py-1 text-slate-700">{line.productCode}</td>
-                                    <td className="py-1 text-right text-slate-700">{line.quantity}</td>
-                                    <td className="py-1 text-right text-slate-700">
+                                    <td className="py-1 text-fg-secondary">{line.productName}</td>
+                                    <td className="py-1 text-fg-secondary">{line.productCode}</td>
+                                    <td className="py-1 text-right text-fg-secondary">{line.quantity}</td>
+                                    <td className="py-1 text-right text-fg-secondary">
                                         {currencyFormatter.format(Number(line.price))}
                                     </td>
                                 </tr>
@@ -85,13 +86,13 @@ export function ReceiptRow({ receipt }: { receipt: ReceiptDTO }) {
                         </Button>
                     </div>
                     {pdfUrl.isError && (
-                        <p className="text-sm text-red-600">
-                            Errore: {(pdfUrl.error as Error).message}
+                        <p className="text-sm text-danger">
+                            {errorMessage(pdfUrl.error, "Non è stato possibile aprire il PDF della ricevuta.")}
                         </p>
                     )}
                     {deleteReceipt.isError && (
-                        <p className="text-sm text-red-600">
-                            Errore: {(deleteReceipt.error as Error).message}
+                        <p className="text-sm text-danger">
+                            {errorMessage(deleteReceipt.error, "Non è stato possibile eliminare la ricevuta.")}
                         </p>
                     )}
                 </div>
