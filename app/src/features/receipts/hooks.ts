@@ -5,6 +5,7 @@ import {
     getAllReceipts,
     getReceiptPdfUrl,
     getReceiptsByAmountRange,
+    getReceiptsByCard,
     getReceiptsByCode,
     getReceiptsByUserEmail,
     uploadReceiptPdf,
@@ -39,6 +40,15 @@ export function useReceiptsByAmountRange(amountMin: number, amountMax: number, e
         queryKey: ["receipts", "by-amount", amountMin, amountMax],
         queryFn: () => getReceiptsByAmountRange(amountMin, amountMax),
         enabled: enabled && Number.isFinite(amountMin) && Number.isFinite(amountMax),
+    });
+}
+
+export function useReceiptsByCard(cardLast4: string, enabled = true) {
+    return useQuery({
+        queryKey: ["receipts", "by-card", cardLast4],
+        queryFn: () => getReceiptsByCard(cardLast4),
+        // Quattro cifre esatte o non si cerca: con meno il backend risponderebbe 400.
+        enabled: enabled && cardLast4.length === 4,
     });
 }
 

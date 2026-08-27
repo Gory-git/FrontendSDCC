@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useReceipts, useReceiptsByAmountRange, useReceiptsByCode, useReceiptsByUserEmail } from "../src/features/receipts/hooks";
+import { useReceipts, useReceiptsByAmountRange, useReceiptsByCard, useReceiptsByCode, useReceiptsByUserEmail } from "../src/features/receipts/hooks";
 import { useCurrentUser } from "../src/features/user/hooks";
 import { errorMessage } from "../src/lib/errorMessage";
 import { PageContainer } from "../src/components/PageContainer";
@@ -8,10 +8,11 @@ import { Loading } from "../src/components/Loading";
 import { Field } from "../src/components/Field";
 import { Button, LinkButton } from "../src/components/Button";
 import { ThresholdSlider } from "../src/components/ThresholdSlider";
+import { lastFourDigits } from "../src/lib/card";
 import { ReceiptRow } from "../src/features/receipts/ReceiptRow";
 import type { ReceiptDTO } from "../src/api/types";
 
-type Mode = "all" | "code" | "email" | "amount";
+type Mode = "all" | "code" | "email" | "amount" | "card";
 
 function ReceiptResults({
     data, isLoading, isError, error, emptyMessage,
@@ -54,6 +55,7 @@ export default function ReceiptsPage() {
     const [codeQuery, setCodeQuery] = useState("");
     const [codeThreshold, setCodeThreshold] = useState(0.5);
 
+    const [cardQuery, setCardQuery] = useState("");
     const [emailQuery, setEmailQuery] = useState("");
     const [emailThreshold, setEmailThreshold] = useState(0.5);
 
@@ -72,6 +74,10 @@ export default function ReceiptsPage() {
         ? [...allReceipts.data].reverse()
         : allReceipts.data;
     const codeResults = useReceiptsByCode(codeQuery.trim(), codeThreshold, mode === "code");
+    // Il numero si riduce qui, prima della chiamata: quello che parte dal
+    // browser sono solo quattro cifre.
+    const cardLast4 = lastFourDigits(cardQuery);
+    const cardResults = useReceiptsByCard(cardLast4, mode === "card");
     const emailResults = useReceiptsByUserEmail(emailQuery.trim(), emailThreshold, mode === "email" && isAdmin);
     const amountResults = useReceiptsByAmountRange(amountMin, amountMax, mode === "amount" && isAmountRangeValid);
 
@@ -108,6 +114,14 @@ export default function ReceiptsPage() {
                         }`}
                     >
                         Cerca per importo
+                    </button>
+                    <button
+                        onClick={() => setMode("card")}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            mode === "card" ? "bg-brand text-white" : "text-fg-muted hover:bg-muted"
+                        }`}
+                    >
+                        Cerca per carta
                     </button>
                     {isAdmin && (
                         <button
@@ -226,6 +240,38 @@ export default function ReceiptsPage() {
                             isError={amountResults.isError}
                             error={amountResults.error}
                             emptyMessage="Nessuna ricevuta corrisponde alla ricerca."
+                        />
+                    )}
+                </>
+            )}
+
+            {mode === "card" && (
+                <>
+                    <Card className="space-y-2">
+                        <Field
+                            id="cardQuery"
+                            label="Carta di pagamento"
+                            value={cardQuery}
+                            onChange={(e) => setCardQuery(e.target.value)}
+                            placeholder="es. 4242 oppure il numero completo"
+                        />
+                        <p className="text-xs text-fg-muted">
+                            Puoi digitare il numero intero: vengono usate solo le ultime quattro
+                            cifre, le uniche che l'applicazione conserva.
+                        </p>
+                    </Card>
+
+                    {cardLast4 === "" ? (
+                        <p className="text-fg-muted">
+                            Inserisci almeno le ultime quattro cifre della carta per cercare.
+                        </p>
+                    ) : (
+                        <ReceiptResults
+                            data={cardResults.data}
+                            isLoading={cardResults.isLoading}
+                            isError={cardResults.isError}
+                            error={cardResults.error}
+                            emptyMessage={`Nessuna ricevuta pagata con la carta •••• ${cardLast4}.`}
                         />
                     )}
                 </>

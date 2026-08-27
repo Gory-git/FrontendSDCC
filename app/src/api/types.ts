@@ -45,6 +45,8 @@ export type ReceiptDTO = {
     date: string;
     paymentMethod: PaymentMethod;
     userEmail: string;
+    /** Ultime quattro cifre della carta usata, se pagata con carta. Mai il numero intero. */
+    cardLast4?: string;
     lines: ReceiptLineDTO[];
     s3Key?: string;
 };

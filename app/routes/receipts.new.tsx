@@ -4,6 +4,7 @@ import { useCurrentUser } from "../src/features/user/hooks";
 import { useAllProducts } from "../src/features/products/hooks";
 import { useAddReceipt, useUploadReceiptPdf } from "../src/features/receipts/hooks";
 import type { PaymentMethod, ReceiptDTO } from "../src/api/types";
+import { isPlausibleCard, lastFourDigits } from "../src/lib/card";
 import { PageContainer } from "../src/components/PageContainer";
 import { Loading, ReceiptSpinner } from "../src/components/Loading";
 import { errorMessage } from "../src/lib/errorMessage";
@@ -45,6 +46,11 @@ function ManualReceiptForm() {
     const [code, setCode] = useState<string>(() => crypto.randomUUID());
     const [date, setDate] = useState(nowForDatetimeLocal);
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
+    const [card, setCard] = useState("");
+    // La carta si chiede solo dove ha senso: il backend rifiuta una ricevuta
+    // in contanti con un numero di carta allegato.
+    const pagaConCarta = paymentMethod === "CREDIT_CARD" || paymentMethod === "DEBIT_CARD";
+    const cartaNonValida = pagaConCarta && card.trim() !== "" && !isPlausibleCard(card);
     const [tax, setTax] = useState("");
     const [userEmail, setUserEmail] = useState("");
     const [lines, setLines] = useState<LineForm[]>([{ productCode: "", quantity: "1", price: "" }]);
@@ -66,7 +72,7 @@ function ManualReceiptForm() {
     );
     const isTaxValid = tax !== "" && Number.isFinite(taxValue) && taxValue > 0;
     const amount = subtotal + (isTaxValid ? taxValue : 0);
-    const canSubmit = hasValidLines && subtotal > 0 && isTaxValid && !!effectiveUserEmail && !addReceipt.isPending;
+    const canSubmit = hasValidLines && subtotal > 0 && isTaxValid && !!effectiveUserEmail && !cartaNonValida && !addReceipt.isPending;
 
     function updateLine(index: number, patch: Partial<LineForm>) {
         setLines((prev) => prev.map((l, i) => (i === index ? { ...l, ...patch } : l)));
@@ -90,6 +96,9 @@ function ManualReceiptForm() {
             tax: taxValue,
             date: new Date(date).toISOString(),
             paymentMethod,
+            // Solo le ultime quattro cifre lasciano il browser, e nulla parte se
+            // il metodo di pagamento non e' una carta.
+            cardLast4: pagaConCarta ? lastFourDigits(card) || undefined : undefined,
             userEmail: effectiveUserEmail,
             lines: lines.map((l) => ({
                 productCode: l.productCode,
@@ -133,6 +142,22 @@ function ManualReceiptForm() {
                         ))}
                     </select>
                 </div>
+
+                {pagaConCarta && (
+                    <div>
+                        <Field
+                            id="card"
+                            label="Carta (facoltativo)"
+                            value={card}
+                            onChange={(e) => setCard(e.target.value)}
+                            placeholder="numero completo o ultime 4 cifre"
+                            error={cartaNonValida ? "Numero di carta non valido." : undefined}
+                        />
+                        <p className="text-xs text-fg-muted mt-1">
+                            Vengono salvate solo le ultime quattro cifre.
+                        </p>
+                    </div>
+                )}
 
                 <div>
                     <Field

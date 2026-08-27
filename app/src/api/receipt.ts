@@ -61,6 +61,21 @@ export async function getReceiptsByCode(code: string, threshold: number): Promis
 }
 
 /**
+ * Ricerca per carta di pagamento.
+ *
+ * `card` deve contenere SOLO le ultime quattro cifre: chi chiama riduce il
+ * numero prima (vedi `lastFourDigits`), così un numero di carta completo non
+ * finisce mai in una query string, dove resterebbe scritto nei log del server e
+ * nella cronologia del browser. Il backend rifà comunque la riduzione.
+ *
+ * Il confronto è esatto e non fuzzy: su un numero di carta la somiglianza
+ * restituirebbe le carte di altre persone.
+ */
+export async function getReceiptsByCard(card: string): Promise<ReceiptDTO[]> {
+    return apiFetch<ReceiptDTO[]>(`/receipt/find-by-card?card=${encodeURIComponent(card)}`);
+}
+
+/**
  * Ricerca per fascia di importo. Il backend limita i risultati alle
  * ricevute dell'utente corrente, a meno che non sia ADMIN.
  */

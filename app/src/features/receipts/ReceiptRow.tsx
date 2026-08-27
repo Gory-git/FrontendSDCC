@@ -8,6 +8,7 @@ import { errorMessage } from "../../lib/errorMessage";
 import { Button } from "../../components/Button";
 import { ReceiptSpinner } from "../../components/Loading";
 import { currencyFormatter, formatDate, paymentMethodLabels } from "./formatters";
+import { formatCard } from "../../lib/card";
 
 export function ReceiptRow({ receipt }: { receipt: ReceiptDTO }) {
     const [expanded, setExpanded] = useState(false);
@@ -44,7 +45,12 @@ export function ReceiptRow({ receipt }: { receipt: ReceiptDTO }) {
                 </div>
                 <div className="text-right shrink-0">
                     <p className="font-semibold text-fg">{currencyFormatter.format(Number(receipt.amount))}</p>
-                    <p className="text-sm text-brand-fg">{paymentMethodLabels[receipt.paymentMethod]}</p>
+                    <p className="text-sm text-brand-fg">
+                        {paymentMethodLabels[receipt.paymentMethod]}
+                        {receipt.cardLast4 && (
+                            <span className="text-fg-muted"> · {formatCard(receipt.cardLast4)}</span>
+                        )}
+                    </p>
                 </div>
             </button>
 
