@@ -6,7 +6,7 @@ import { PageContainer } from "../src/components/PageContainer";
 import { Card } from "../src/components/Card";
 import { Button } from "../src/components/Button";
 import { Loading, ReceiptSpinner } from "../src/components/Loading";
-import { errorMessage } from "../src/lib/errorMessage";
+import { errorMessage, isTooManyRequests } from "../src/lib/errorMessage";
 import type { ChatMessage } from "../src/api/types";
 
 /** Stesso limite del backend: meglio fermare qui che farsi rifiutare la richiesta. */
@@ -73,6 +73,10 @@ export default function ChatPage() {
     const [draft, setDraft] = useState("");
     const [ripristinata, setRipristinata] = useState(false);
     const fineTranscript = useRef<HTMLDivElement>(null);
+
+    // Quota giornaliera esaurita: il messaggio lo scrive l'interfaccia, come per
+    // ogni altro errore, ma qui "Riprova" fallirebbe di sicuro e va tolto.
+    const quotaEsaurita = isTooManyRequests(ask.error);
 
     const isAdmin = currentUser?.role === "ROLE_ADMIN";
     const esempi = isAdmin ? ESEMPI_ADMIN : ESEMPI_CLIENTE;
@@ -220,10 +224,16 @@ export default function ChatPage() {
                     {ask.isError && (
                         <div className="flex justify-start">
                             <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-danger-line bg-danger-bg px-4 py-2.5 text-sm text-danger space-y-2">
-                                <p>{errorMessage(ask.error, "Non è stato possibile ottenere una risposta.")}</p>
-                                <Button variant="secondary" onClick={riprova} className="px-3 py-1.5 text-xs">
-                                    Riprova
-                                </Button>
+                                <p>
+                                    {quotaEsaurita
+                                        ? "Hai esaurito le domande a RiceVito per oggi. Riprova domani."
+                                        : errorMessage(ask.error, "Non è stato possibile ottenere una risposta.")}
+                                </p>
+                                {!quotaEsaurita && (
+                                    <Button variant="secondary" onClick={riprova} className="px-3 py-1.5 text-xs">
+                                        Riprova
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     )}

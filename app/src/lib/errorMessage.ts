@@ -19,6 +19,7 @@ const BY_STATUS: Record<number, string> = {
     403: "Non hai i permessi per questa operazione.",
     409: "Questi dati sono già associati a un altro elemento.",
     413: "Il file è troppo grande.",
+    429: "Hai fatto troppe richieste. Riprova più tardi.",
     415: "Formato del file non supportato.",
 };
 
@@ -38,4 +39,12 @@ export function errorMessage(
 /** Per distinguere "nessun risultato" da un errore vero al sito di chiamata. */
 export function isNotFound(error: unknown): boolean {
     return error instanceof ApiError && error.status === 404;
+}
+
+/**
+ * Limite d'uso raggiunto (il backend lo applica alle domande al chatbot). Serve
+ * a chi chiama per non offrire un "Riprova" che fallirebbe di sicuro.
+ */
+export function isTooManyRequests(error: unknown): boolean {
+    return error instanceof ApiError && error.status === 429;
 }
