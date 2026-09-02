@@ -5,7 +5,8 @@ import { apiFetch } from "../api/client";
 import { Card } from "../components/Card";
 import { Field } from "../components/Field";
 import { Button } from "../components/Button";
-import { validateCodiceFiscale, validatePhone, validateRequired } from "../lib/userValidation";
+import { validateCodiceFiscale, validatePassword, validatePhone, validateRequired } from "../lib/userValidation";
+import { PasswordStrengthBar } from "../components/PasswordStrengthBar";
 import { errorMessage } from "../lib/errorMessage";
 import { firebaseErrorMessage, isFirebaseError } from "../lib/firebaseError";
 
@@ -43,12 +44,7 @@ function validate(data: FormData): FormErrors {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email))
         errors.email = "Formato email non valido.";
 
-    if (!data.password)
-        errors.password = "La password è obbligatoria.";
-    else if (data.password.length < 8)
-        errors.password = "La password deve avere almeno 8 caratteri.";
-    else if (!/[A-Z]/.test(data.password) || !/[0-9]/.test(data.password))
-        errors.password = "Deve contenere almeno una maiuscola e un numero.";
+    errors.password = validatePassword(data.password);
 
     errors.phone = validatePhone(data.phone);
     errors.codiceFiscale = validateCodiceFiscale(data.codiceFiscale);
@@ -59,45 +55,6 @@ function validate(data: FormData): FormErrors {
     });
 
     return errors;
-}
-
-// ── Password Strength Bar ─────────────────────────────────────────────────────
-
-function getStrength(password: string): { score: number; label: string; color: string } {
-    let score = 0;
-    if (password.length >= 8)          score++;
-    if (/[A-Z]/.test(password))        score++;
-    if (/[0-9]/.test(password))        score++;
-    if (/[^A-Za-z0-9]/.test(password)) score++;
-
-    const levels = [
-        { label: "Molto debole", color: "bg-red-500"    },
-        { label: "Debole",       color: "bg-orange-400" },
-        { label: "Discreta",     color: "bg-yellow-400" },
-        { label: "Forte",        color: "bg-green-400"  },
-        { label: "Molto forte",  color: "bg-green-600"  },
-    ];
-
-    return { score, ...levels[score] };
-}
-
-function PasswordStrengthBar({ password }: { password: string }) {
-    const { score, label, color } = getStrength(password);
-    return (
-        <div className="space-y-1">
-            <div className="flex gap-1">
-                {[0, 1, 2, 3].map(i => (
-                    <div
-                        key={i}
-                        className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-                            i < score ? color : "bg-muted"
-                        }`}
-                    />
-                ))}
-            </div>
-            <p className="text-xs text-fg-muted">{label}</p>
-        </div>
-    );
 }
 
 // ── Componente Principale ─────────────────────────────────────────────────────

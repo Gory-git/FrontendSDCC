@@ -1,8 +1,11 @@
 import {
+    EmailAuthProvider,
     onAuthStateChanged,
+    reauthenticateWithCredential,
     sendPasswordResetEmail,
     signInWithEmailAndPassword,
     signOut,
+    updatePassword,
     type User,
 } from "firebase/auth";
 import { isFirebaseError } from "../lib/firebaseError";
@@ -36,6 +39,28 @@ export async function sendPasswordReset(email: string) {
         if (isFirebaseError(error) && error.code === "auth/user-not-found") return;
         throw error;
     }
+}
+
+/**
+ * Cambia la password dell'utente autenticato.
+ *
+ * La riautenticazione non è facoltativa: Firebase rifiuta updatePassword con
+ * `auth/requires-recent-login` se l'accesso non è recente, e quell'errore
+ * arriverebbe all'utente dopo che ha già compilato tutto il form. Verificare
+ * subito la password attuale risolve due problemi in uno, perché è anche la
+ * prova che al terminale ci sia davvero il proprietario dell'account e non
+ * qualcuno che ha trovato la sessione aperta.
+ *
+ * Attenzione: al cambio, Firebase revoca i refresh token delle altre sessioni.
+ * Questa resta valida, le altre cadono al successivo rinnovo.
+ */
+export async function changePassword(currentPassword: string, newPassword: string) {
+    const user = getFirebaseAuth().currentUser;
+    if (!user?.email) throw new Error("Nessun utente autenticato.");
+
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    await reauthenticateWithCredential(user, credential);
+    await updatePassword(user, newPassword);
 }
 
 export async function logout() {
