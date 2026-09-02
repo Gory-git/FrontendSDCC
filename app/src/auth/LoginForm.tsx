@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { loginWithEmailPassword } from "../auth/auth-client";
+import { loginWithEmailPassword, sendPasswordReset } from "../auth/auth-client";
 import { Card } from "../components/Card";
 import { Field } from "../components/Field";
 import { Button } from "../components/Button";
@@ -12,10 +12,13 @@ export default function LoginForm() {
     const [password, setPassword] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [resetMessage, setResetMessage] = useState("");
+    const [isSendingReset, setIsSendingReset] = useState(false);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setErrorMessage("");
+        setResetMessage("");
         setIsLoading(true);
 
         try {
@@ -25,6 +28,30 @@ export default function LoginForm() {
             setErrorMessage(firebaseErrorMessage(error, "Accesso non riuscito. Riprova."));
         } finally {
             setIsLoading(false);
+        }
+    }
+
+    async function handlePasswordReset() {
+        setErrorMessage("");
+        setResetMessage("");
+
+        // L'email è quella già scritta nel form: chiederla una seconda volta in un
+        // campo a parte duplicherebbe l'unico dato che serve.
+        if (!email.trim()) {
+            setErrorMessage("Inserisci la tua email, poi premi di nuovo.");
+            return;
+        }
+
+        setIsSendingReset(true);
+        try {
+            await sendPasswordReset(email.trim());
+            // Messaggio volutamente identico anche per un indirizzo non registrato:
+            // vedi il commento su sendPasswordReset.
+            setResetMessage("Se l'indirizzo è registrato, riceverai un'email con le istruzioni.");
+        } catch (error) {
+            setErrorMessage(firebaseErrorMessage(error, "Invio non riuscito. Riprova."));
+        } finally {
+            setIsSendingReset(false);
         }
     }
 
@@ -55,6 +82,21 @@ export default function LoginForm() {
                         onChange={(e) => setPassword(e.target.value)}
                         required
                     />
+
+                    <div className="flex justify-end -mt-2">
+                        <button
+                            type="button"
+                            onClick={handlePasswordReset}
+                            disabled={isSendingReset || isLoading}
+                            className="text-sm text-brand-fg hover:text-brand-hover disabled:opacity-60"
+                        >
+                            {isSendingReset ? "Invio in corso..." : "Password dimenticata?"}
+                        </button>
+                    </div>
+
+                    {resetMessage && (
+                        <p className="text-sm text-success">{resetMessage}</p>
+                    )}
 
                     {errorMessage && (
                         <div className="rounded-lg border border-danger-line bg-danger-bg px-4 py-3 text-sm text-danger flex items-center gap-2">
