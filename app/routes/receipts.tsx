@@ -10,6 +10,7 @@ import { Button, LinkButton } from "../src/components/Button";
 import { ThresholdSlider } from "../src/components/ThresholdSlider";
 import { lastFourDigits } from "../src/lib/card";
 import { ReceiptRow } from "../src/features/receipts/ReceiptRow";
+import { exportReceiptsToCsv } from "../src/features/receipts/csvExport";
 import type { ReceiptDTO } from "../src/api/types";
 
 type Mode = "all" | "code" | "email" | "amount" | "card";
@@ -81,6 +82,20 @@ export default function ReceiptsPage() {
     const emailResults = useReceiptsByUserEmail(emailQuery.trim(), emailThreshold, mode === "email" && isAdmin);
     const amountResults = useReceiptsByAmountRange(amountMin, amountMax, mode === "amount" && isAmountRangeValid);
 
+    // Le ricevute effettivamente a schermo, qualunque sia la modalità: sono quelle
+    // che il pulsante di esportazione deve produrre. In errore si esporta nulla,
+    // per la stessa ragione per cui ReceiptResults non mostra i dati: `data` può
+    // contenere ancora il risultato della ricerca precedente.
+    const visibleReceipts = (() => {
+        const query = mode === "code" ? codeResults
+            : mode === "card" ? cardResults
+            : mode === "email" ? emailResults
+            : mode === "amount" ? amountResults
+            : allReceipts;
+        if (query.isError) return undefined;
+        return mode === "all" ? orderedReceipts : query.data;
+    })();
+
     return (
         <PageContainer>
             <div className="flex items-center justify-between flex-wrap gap-3">
@@ -89,6 +104,15 @@ export default function ReceiptsPage() {
                     <LinkButton to="/receipts/new" className="px-3 py-1.5">
                         + Nuova ricevuta
                     </LinkButton>
+                    <Button
+                        variant="secondary"
+                        className="px-3 py-1.5"
+                        disabled={!visibleReceipts || visibleReceipts.length === 0}
+                        title="Esporta le ricevute mostrate in un file CSV"
+                        onClick={() => visibleReceipts && exportReceiptsToCsv(visibleReceipts)}
+                    >
+                        Esporta CSV
+                    </Button>
                 </div>
                 <div className="flex gap-1 rounded-lg border border-line bg-card p-1 flex-wrap">
                     <button
