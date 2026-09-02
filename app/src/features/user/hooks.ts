@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { UserDTO } from "../../api/types";
+import type { UserDTO, UserUpdateDTO } from "../../api/types";
 import {
     completeRegistration,
     getAllUsers,
@@ -9,6 +9,7 @@ import {
     registerUser,
     searchUsers,
     updateCurrentUser,
+    updateUserByEmail,
 } from "../../api/user";
 
 export function useRegisterUser() {
@@ -33,6 +34,27 @@ export function useUpdateCurrentUser() {
             // la risposta evita di mostrare i vecchi dati fino al refetch.
             queryClient.setQueryData(["current-user"], user);
             queryClient.invalidateQueries({ queryKey: ["users"] });
+        },
+    });
+}
+
+/**
+ * Modifica il profilo di un altro utente (solo ADMIN). L'email è fissata nell'hook,
+ * così la mutazione ha la stessa forma di useUpdateCurrentUser e il form si riusa
+ * senza sapere quale dei due sta salvando.
+ */
+export function useUpdateUserByEmail(email: string) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (dto: UserUpdateDTO) => updateUserByEmail(email, dto),
+        onSuccess: (user) => {
+            queryClient.invalidateQueries({ queryKey: ["users"] });
+            // Un admin può modificare anche se stesso dalla pagina utenti. La card del
+            // profilo e la navbar leggono ["current-user"], che non è toccata da
+            // invalidateQueries(["users"]) e resterebbe ferma ai dati vecchi.
+            const current = queryClient.getQueryData<UserDTO>(["current-user"]);
+            if (current?.email === user.email)
+                queryClient.setQueryData(["current-user"], user);
         },
     });
 }

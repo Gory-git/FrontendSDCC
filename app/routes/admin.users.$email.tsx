@@ -1,8 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { useReceiptsByUserEmail } from "../src/features/receipts/hooks";
-import { useUserByEmail } from "../src/features/user/hooks";
+import { useUpdateUserByEmail, useUserByEmail } from "../src/features/user/hooks";
+import { ProfileForm } from "../src/features/user/ProfileForm";
 import { PageContainer } from "../src/components/PageContainer";
+import { Button } from "../src/components/Button";
 import { Card } from "../src/components/Card";
 import { Loading } from "../src/components/Loading";
 import { errorMessage } from "../src/lib/errorMessage";
@@ -24,6 +26,8 @@ function SchedaUtente({ user, receipts }: { user: UserDTO; receipts: ReceiptDTO[
         () => receipts?.reduce((somma, r) => somma + Number(r.amount), 0) ?? 0,
         [receipts]
     );
+    const modifica = useUpdateUserByEmail(user.email);
+    const [isEditing, setIsEditing] = useState(false);
 
     return (
         <Card className="space-y-4">
@@ -32,17 +36,30 @@ function SchedaUtente({ user, receipts }: { user: UserDTO; receipts: ReceiptDTO[
                     <h2 className="text-lg font-semibold text-fg">{user.name} {user.surname}</h2>
                     <p className="text-sm text-fg-muted">{user.email}</p>
                 </div>
-                <span className="text-xs font-medium uppercase tracking-wide text-brand-fg shrink-0">
-                    {user.role === "ROLE_ADMIN" ? "Admin" : "Utente"}
-                </span>
+                <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-xs font-medium uppercase tracking-wide text-brand-fg">
+                        {user.role === "ROLE_ADMIN" ? "Admin" : "Utente"}
+                    </span>
+                    {!isEditing && (
+                        <Button variant="secondary" className="px-3 py-1.5"
+                                onClick={() => setIsEditing(true)}>
+                            Modifica
+                        </Button>
+                    )}
+                </div>
             </div>
 
-            <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <Riga etichetta="Telefono" valore={user.phone || "Non inserito"} />
-                <Riga etichetta="Codice fiscale" valore={user.codiceFiscale || "Non inserito"} />
-                <Riga etichetta="Ricevute" valore={receipts ? String(receipts.length) : "—"} />
-                <Riga etichetta="Totale speso" valore={receipts ? currencyFormatter.format(totale) : "—"} />
-            </dl>
+            {isEditing ? (
+                <ProfileForm user={user} mutation={modifica}
+                             onClose={() => setIsEditing(false)} />
+            ) : (
+                <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <Riga etichetta="Telefono" valore={user.phone || "Non inserito"} />
+                    <Riga etichetta="Codice fiscale" valore={user.codiceFiscale || "Non inserito"} />
+                    <Riga etichetta="Ricevute" valore={receipts ? String(receipts.length) : "—"} />
+                    <Riga etichetta="Totale speso" valore={receipts ? currencyFormatter.format(totale) : "—"} />
+                </dl>
+            )}
         </Card>
     );
 }

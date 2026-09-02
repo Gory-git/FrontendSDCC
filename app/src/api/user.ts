@@ -35,6 +35,20 @@ export async function updateCurrentUser(dto: UserUpdateDTO): Promise<UserDTO> {
         });
 }
 
+/**
+ * Aggiorna i dati anagrafici di un altro utente (solo ADMIN). L'email individua la
+ * riga e non è modificabile: non compare in UserUpdateDTO, esattamente come per il
+ * profilo personale.
+ */
+export async function updateUserByEmail(email: string, dto: UserUpdateDTO): Promise<UserDTO> {
+    return apiFetch<UserDTO>(
+        `/user/update-by-email?email=${encodeURIComponent(email)}`,
+        {
+            method: "PUT",
+            body: JSON.stringify(dto)
+        });
+}
+
 export async function getAllUsers(): Promise<UserDTO[]> {
     return apiFetch<UserDTO[]>("/user/list");
 }
