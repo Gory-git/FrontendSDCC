@@ -8,6 +8,7 @@ import { errorMessage } from "../../lib/errorMessage";
 import { Button } from "../../components/Button";
 import { ReceiptSpinner } from "../../components/Loading";
 import { currencyFormatter, formatDate, paymentMethodLabels } from "./formatters";
+import { exportReceiptDetailToCsv } from "./csvExport";
 import { formatCard } from "../../lib/card";
 
 export function ReceiptRow({ receipt }: { receipt: ReceiptDTO }) {
@@ -102,6 +103,13 @@ export function ReceiptRow({ receipt }: { receipt: ReceiptDTO }) {
                             disabled={pdfUrl.isPending}
                         >
                             {pdfUrl.isPending ? <><ReceiptSpinner size="sm" />Generazione...</> : "Scarica PDF"}
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            title="Esporta questa ricevuta, con il dettaglio delle righe, in un file CSV"
+                            onClick={() => exportReceiptDetailToCsv(receipt)}
+                        >
+                            Esporta CSV
                         </Button>
                         <Button
                             variant="danger"
